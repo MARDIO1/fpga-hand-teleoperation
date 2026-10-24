@@ -1,0 +1,13 @@
+{
+  "module": "fusion",
+  "version": "0.1.0",
+  "board": "ACZ7015",
+  "part": "xc7z015clg485-2",
+  "tool_version": "2025.2",
+  "clock_mhz": 100,
+  "files": {
+    "hand_core.bit": "F67E56CDAC53F7F33250E32EB342748F3FE5CB1C74524D6FEFC4EE4A2031C143",
+    "hand_core.hwh": "4E396F00C1D38349C5BC51D5179FCBB8EF863DE5F70486988518DAACE6B14800",
+    "hand_core.xsa": "9806D90E45598DD62679C8470C55C7DE3D68270C50E2413C969BA9D0376D8477"
+  }
+}

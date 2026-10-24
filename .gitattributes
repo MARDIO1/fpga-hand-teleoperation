@@ -1,0 +1,13 @@
+*.bit binary
+*.hwh binary
+*.xsa binary
+*.zip binary
+*.png binary
+*.jpg binary
+*.mp4 binary
+*.txt text eol=lf
+*.md text eol=lf
+*.tcl text eol=lf
+*.cpp text eol=lf
+*.hpp text eol=lf
+*.py text eol=lf

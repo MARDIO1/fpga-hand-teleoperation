@@ -1,0 +1,10 @@
+[project]
+name = "pc-part"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = [
+    "mujoco>=3.16.0",
+    "mujoco-menagerie>=2026.10.4",
+    "numpy>=2.5.3",
+    "opencv-python>=5.0.0.93",
+]

@@ -1,0 +1,38 @@
+# Python
+.venv/
+.menagerie-cache/
+.uv-cache/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# Vitis HLS generated state
+**/build/
+**/.Xil/
+**/.run/
+**/*.hlsrun_*
+**/dfx_runtime.txt
+
+# Vivado generated projects and runs
+**/vivado/project/
+**/vivado/output/
+**/vivado/reports/
+*.jou
+*.log
+*.str
+*.pb
+*.wdb
+*.wcfg
+
+# Local datasets and simulation results
+**/data/raw/
+simulation/datasets/raw/
+simulation/results/
+modules/fusion/reconstruction.txt
+
+# Editors and operating systems
+.idea/
+.vscode/
+Thumbs.db
+.DS_Store
