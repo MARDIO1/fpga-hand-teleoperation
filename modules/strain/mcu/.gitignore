@@ -1,0 +1,17 @@
+# Keil build output
+Output/
+Projects/MDK-ARM/Objects/
+Projects/MDK-ARM/Listings/
+Projects/MDK-ARM/DebugConfig/
+*.uvguix.*
+*.o
+*.d
+*.crf
+*.axf
+*.hex
+*.map
+*.lst
+*.lnp
+*.sct
+*.dep
+*.htm

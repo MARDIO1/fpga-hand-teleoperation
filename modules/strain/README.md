@@ -8,3 +8,4 @@ Owner workspace for five-channel strain acquisition and preprocessing.
 - `vivado/`: standalone ACZ7015 test design and rebuild scripts
 - `export/ip/`: packaged IP releases
 - `export/bitstream/`: standalone module test bitstreams
+- `mcu/`: STM32F103 ADC/UART acquisition firmware
