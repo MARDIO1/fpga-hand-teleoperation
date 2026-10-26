@@ -1,0 +1,19 @@
+{
+  "tool": "Vivado 2025.2",
+  "part": "xc7z015clg485-2",
+  "source_commit": "e4edf454fffa057b6d0d8fca81f6d96dbed3bca1",
+  "source_worktree_dirty": true,
+  "hardware_tested": false,
+  "clock_mhz": 100,
+  "timing_wns_ns": 1.429,
+  "timing_whs_ns": 0.055,
+  "slice_luts": 9399,
+  "slice_registers": 9979,
+  "bram_tiles": 2.5,
+  "dsps": 33,
+  "sha256": {
+    "first_board.bit": "18B23713F130A9D017BCDC0E7910EB6FE4FD04B3F83D3AE33CCC2E99C7D94E97",
+    "first_board.hwh": "6EF7E7388E3859837E7FC02DB98B14082FE10075553E34A4D7FF362C9EFACD48",
+    "first_board.xsa": "A3E7F1779AF5DF7AD2212902B5187DA606BD5EB8D9F60BB2715A2548A024A265"
+  }
+}

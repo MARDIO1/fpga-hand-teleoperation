@@ -13,4 +13,8 @@ spread from bend and uses bounded inertial prediction only during short camera l
 - `export/ip/`: packaged HLS IP archive
 - `export/bitstream/`: independently tested ACZ7015 overlay
 
-Run `run_native.cmd` from this directory for the native tests. Vitis HLS uses `hls_config.cfg`. The standalone Vivado overlay is rebuilt with `vivado/build_overlay.cmd` after HLS has produced `build/hls/impl/ip`.
+Run `run_native.cmd` for the native tests and `build_hls.cmd` to synthesize and
+package the current IP. The build script stages inputs under `%TEMP%` because
+Vitis HLS rejects the repository's space-containing parent path. The standalone
+Vivado overlay is rebuilt with `vivado/build_overlay.cmd` after HLS has produced
+`build/hls/impl/ip`.

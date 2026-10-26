@@ -1,5 +1,5 @@
 # Fusion IP export
 
-`hand_core.zip` is the previous marker-input v0.1 package and does not match the
-current source. The authoritative v0.2 implementation is `../../hls/`; regenerate
-the archive before rebuilding the overlay.
+`hand_core.zip` is generated from the current camera/IMU/strain v0.2 source in
+`../../hls/`. The final board design consumes the unpacked generated IP under
+`../../build/hls/impl/ip`; the archive is kept as the portable module artifact.

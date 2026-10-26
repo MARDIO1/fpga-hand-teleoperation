@@ -27,11 +27,11 @@ struct History {
 };
 
 float limit(float value, float low, float high) {
-    return std::fmax(low, std::fmin(high, value));
+    return value < low ? low : (value > high ? high : value);
 }
 
-float norm3(const float value[3]) {
-    return std::sqrt(value[0] * value[0] + value[1] * value[1] + value[2] * value[2]);
+float norm3(float x, float y, float z) {
+    return std::sqrt(x * x + y * y + z * z);
 }
 
 void normalize4(float value[4]) {
@@ -62,10 +62,13 @@ void to_rotation(const float q[4], float r[9]) {
 }
 
 void rotate_vector(const float q[4], const float v[3], float out[3]) {
-    float r[9];
-    to_rotation(q, r);
-    for (int row = 0; row < 3; ++row)
-        out[row] = r[3 * row] * v[0] + r[3 * row + 1] * v[1] + r[3 * row + 2] * v[2];
+    float w = q[0], x = q[1], y = q[2], z = q[3];
+    out[0] = (1 - 2 * (y * y + z * z)) * v[0] +
+             2 * (x * y - w * z) * v[1] + 2 * (x * z + w * y) * v[2];
+    out[1] = 2 * (x * y + w * z) * v[0] +
+             (1 - 2 * (x * x + z * z)) * v[1] + 2 * (y * z - w * x) * v[2];
+    out[2] = 2 * (x * z - w * y) * v[0] + 2 * (y * z + w * x) * v[1] +
+             (1 - 2 * (x * x + y * y)) * v[2];
 }
 } // namespace
 
@@ -92,8 +95,8 @@ void hand_core(const HandInput &input, bool reset, HandOutput &output) {
         }
         normalize4(q);
         if (dot < 0)
-            for (float &value : q)
-                value = -value;
+            for (int i = 0; i < 4; ++i)
+                q[i] = -q[i];
         float gain = !h.initialized ? 1.0f : dt / (0.02f + dt);
         for (int i = 0; i < 4; ++i)
             h.quaternion[i] += gain * (q[i] - h.quaternion[i]);
@@ -111,7 +114,7 @@ void hand_core(const HandInput &input, bool reset, HandOutput &output) {
             float delta[3];
             for (int i = 0; i < 3; ++i)
                 delta[i] = input.camera_position[i] - h.last_camera[i];
-            bool still = norm3(delta) < POSITION_DEAD_ZONE;
+            bool still = norm3(delta[0], delta[1], delta[2]) < POSITION_DEAD_ZONE;
             float gain = reacquire || h.recovery > 0 ? dt / (RECOVERY_TIME + dt) : 0.75f;
             for (int i = 0; i < 3; ++i) {
                 float measured_velocity = still ? 0 : delta[i] / dt;
@@ -119,10 +122,13 @@ void hand_core(const HandInput &input, bool reset, HandOutput &output) {
                 h.position[i] += gain * (input.camera_position[i] - h.position[i]);
             }
             if (still)
-                for (float &value : h.velocity)
-                    value = 0;
-            if (still && input.imu_valid && norm3(input.angular_velocity) < GYRO_DEAD_ZONE &&
-                norm3(input.linear_acceleration) < 0.4f) {
+                for (int i = 0; i < 3; ++i)
+                    h.velocity[i] = 0;
+            if (still && input.imu_valid &&
+                norm3(input.angular_velocity[0], input.angular_velocity[1],
+                      input.angular_velocity[2]) < GYRO_DEAD_ZONE &&
+                norm3(input.linear_acceleration[0], input.linear_acceleration[1],
+                      input.linear_acceleration[2]) < 0.4f) {
                 for (int i = 0; i < 3; ++i)
                     h.accel_bias[i] += 0.02f * (input.linear_acceleration[i] - h.accel_bias[i]);
                 output.valid |= 8;
@@ -133,7 +139,7 @@ void hand_core(const HandInput &input, bool reset, HandOutput &output) {
         if (reacquire)
             h.recovery = RECOVERY_TIME;
         else
-            h.recovery = std::fmax(0.0f, h.recovery - dt);
+            h.recovery = h.recovery > dt ? h.recovery - dt : 0.0f;
         h.camera_age = 0;
         h.camera_visible = true;
         output.valid |= 1;
@@ -145,9 +151,13 @@ void hand_core(const HandInput &input, bool reset, HandOutput &output) {
         for (int i = 0; i < 3; ++i)
             corrected_body[i] = input.linear_acceleration[i] - h.accel_bias[i];
         rotate_vector(h.quaternion, corrected_body, world_accel);
-        float speed = norm3(h.velocity);
-        bool stationary = input.imu_valid && norm3(corrected_body) < ACCEL_DEAD_ZONE &&
-                          norm3(input.angular_velocity) < GYRO_DEAD_ZONE && speed < STATIONARY_SPEED;
+        float speed = norm3(h.velocity[0], h.velocity[1], h.velocity[2]);
+        bool stationary = input.imu_valid &&
+                          norm3(corrected_body[0], corrected_body[1], corrected_body[2]) <
+                              ACCEL_DEAD_ZONE &&
+                          norm3(input.angular_velocity[0], input.angular_velocity[1],
+                                input.angular_velocity[2]) < GYRO_DEAD_ZONE &&
+                          speed < STATIONARY_SPEED;
         if (stationary) {
             for (int i = 0; i < 3; ++i) {
                 h.velocity[i] = 0;
@@ -163,8 +173,8 @@ void hand_core(const HandInput &input, bool reset, HandOutput &output) {
             output.valid |= input.imu_valid ? 4 : 0;
         }
         if (h.camera_age >= HOLD_TIME)
-            for (float &value : h.velocity)
-                value = 0;
+            for (int i = 0; i < 3; ++i)
+                h.velocity[i] = 0;
         output.state = h.camera_age < PREDICT_TIME ? PREDICT :
                        (h.camera_age < HOLD_TIME ? DAMP : HOLD);
     }
