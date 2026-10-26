@@ -32,6 +32,13 @@ def packet(sequence, timestamp_us, quaternion, bend, position, reset=False):
                      bend[0], bend[1], bend[2], bend[3], bend[4], 0)
 
 
+def smooth_bend(previous, current, alpha, deadband):
+    if previous is None:
+        return tuple(float(value) for value in current)
+    return tuple(old if abs(value - old) <= deadband else old + alpha * (value - old)
+                 for old, value in zip(previous, current))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--bitstream", type=Path, default=DEFAULT_BITSTREAM)
@@ -45,12 +52,15 @@ def main():
     parser.add_argument("--host", default="192.168.137.1")
     parser.add_argument("--port", type=int, default=47000)
     parser.add_argument("--rate", type=float, default=100.0)
+    parser.add_argument("--bend-alpha", type=float, default=0.25)
+    parser.add_argument("--bend-deadband", type=float, default=16.0)
     parser.add_argument("--position", type=float, nargs=3, default=(0.0, 0.0, 0.31))
     parser.add_argument("--calibration-samples", type=int, default=1000)
     parser.add_argument("--seconds", type=float, default=0.0,
                         help="run duration; zero means until interrupted")
     args = parser.parse_args()
-    if args.rate <= 0 or args.preview_span <= 0 or args.calibration_samples < 2 or args.seconds < 0:
+    if (args.rate <= 0 or args.preview_span <= 0 or args.calibration_samples < 2
+            or args.seconds < 0 or not 0 < args.bend_alpha <= 1 or args.bend_deadband < 0):
         parser.error("rates and spans must be positive; seconds must be nonnegative")
 
     from pynq import MMIO, Overlay
@@ -73,6 +83,7 @@ def main():
     last_imu_time = time.monotonic()
     sequence = 0
     sent = 0
+    filtered_bend = None
     next_send = time.monotonic()
     last_report = next_send
     started = next_send
@@ -112,7 +123,10 @@ def main():
                 if now - last_imu_time > 2.0:
                     raise RuntimeError("No fresh IMU sample for 2 s")
                 if pose is not None and latest_strain is not None and now >= next_send:
-                    bend = calibration.map(latest_strain.raw)
+                    filtered_bend = smooth_bend(filtered_bend,
+                                                calibration.map(latest_strain.raw),
+                                                args.bend_alpha, args.bend_deadband)
+                    bend = tuple(int(round(value)) for value in filtered_bend)
                     udp.sendto(packet(sequence, pose["timestamp_us"],
                                       pose["quaternion_wxyz"], bend,
                                       args.position, sequence == 0), destination)

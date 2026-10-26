@@ -6,7 +6,8 @@ import unittest
 
 import numpy as np
 
-from live_hand_udp import (FirstBoardMapper, MAGIC, SENSOR, SENSOR_PACKET,
+from live_hand_udp import (FirstBoardMapper, MAGIC, PALM_DOWN_QUATERNION,
+                           SENSOR, SENSOR_PACKET,
                            UdpSensorReceiver, VERSION, decode_packet)
 
 
@@ -31,9 +32,28 @@ class LiveHandUdpTest(unittest.TestCase):
         mapper = FirstBoardMapper()
         first = mapper.update(decode_packet(packet(0, 0, (0.7071068, 0.0, 0.0, 0.7071068))))
         second = mapper.update(decode_packet(packet(1, 2048, (1.0, 0.0, 0.0, 0.0))))
-        np.testing.assert_allclose(first.wrist_quaternion_wxyz, (1, 0, 0, 0), atol=1e-6)
+        np.testing.assert_allclose(first.wrist_quaternion_wxyz, PALM_DOWN_QUATERNION, atol=1e-6)
         np.testing.assert_allclose(second.bend, (0, 0, 2048 / 4095, 0, 0))
         self.assertAlmostEqual(np.linalg.norm(second.wrist_quaternion_wxyz), 1.0)
+
+    def test_mount_mapping_swaps_roll_and_pitch(self):
+        mapper = FirstBoardMapper()
+        mapper.update(decode_packet(packet(0, 0)))
+        angle = np.deg2rad(10.0) / 2.0
+        hand = mapper.update(decode_packet(packet(
+            1, 0, (np.cos(angle), np.sin(angle), 0.0, 0.0))))
+        expected_relative = np.array((np.cos(angle), 0.0, np.sin(angle), 0.0))
+        expected = np.array((
+            expected_relative[0] * PALM_DOWN_QUATERNION[0]
+            - expected_relative[2] * PALM_DOWN_QUATERNION[2],
+            expected_relative[0] * PALM_DOWN_QUATERNION[1]
+            + expected_relative[2] * PALM_DOWN_QUATERNION[3],
+            expected_relative[0] * PALM_DOWN_QUATERNION[2]
+            + expected_relative[2] * PALM_DOWN_QUATERNION[0],
+            expected_relative[0] * PALM_DOWN_QUATERNION[3]
+            - expected_relative[2] * PALM_DOWN_QUATERNION[1],
+        ))
+        np.testing.assert_allclose(hand.wrist_quaternion_wxyz, expected, atol=1e-6)
 
     def test_all_bends_and_camera_position(self):
         payload = SENSOR_PACKET.pack(

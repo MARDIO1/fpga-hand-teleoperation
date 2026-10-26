@@ -16,6 +16,8 @@ VERSION = 2
 SENSOR = 1
 PORT = 47000
 SENSOR_PACKET = struct.Struct("<IHHIIBBBB13f5HH")
+PALM_DOWN_QUATERNION = np.array((2**-0.5, 2**-0.5, 0.0, 0.0))
+IMU_TO_HAND_QUATERNION = np.array((0.0, 2**-0.5, 2**-0.5, 0.0))
 
 
 @dataclass(slots=True)
@@ -105,7 +107,7 @@ class FirstBoardMapper:
 
     def __init__(self) -> None:
         self.reference_quaternion: np.ndarray | None = None
-        self.quaternion = np.array((1.0, 0.0, 0.0, 0.0))
+        self.quaternion = PALM_DOWN_QUATERNION.copy()
         self.position = np.array((0.0, 0.0, 0.31))
 
     def reset_orientation(self) -> None:
@@ -127,7 +129,11 @@ class FirstBoardMapper:
                 if self.reference_quaternion is None:
                     self.reference_quaternion = quaternion.copy()
                 reference_inverse = self.reference_quaternion * np.array((1.0, -1.0, -1.0, -1.0))
-                self.quaternion = _multiply_quaternions(quaternion, reference_inverse)
+                relative = _multiply_quaternions(quaternion, reference_inverse)
+                mount_inverse = IMU_TO_HAND_QUATERNION * np.array((1.0, -1.0, -1.0, -1.0))
+                relative = _multiply_quaternions(
+                    _multiply_quaternions(IMU_TO_HAND_QUATERNION, relative), mount_inverse)
+                self.quaternion = _multiply_quaternions(relative, PALM_DOWN_QUATERNION)
                 self.quaternion /= np.linalg.norm(self.quaternion)
 
         return HandFrame(frame.sensor.timestamp_us, self.position.copy(),
