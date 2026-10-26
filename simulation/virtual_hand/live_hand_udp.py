@@ -103,13 +103,7 @@ def _multiply_quaternions(left: np.ndarray, right: np.ndarray) -> np.ndarray:
 class FirstBoardMapper:
     """Map one middle-finger strain channel and one dorsal IMU to MANO inputs."""
 
-    def __init__(self, middle_open: float | None, middle_fist: float | None,
-                 middle_span: float = 600.0) -> None:
-        if middle_open is not None and middle_fist == middle_open:
-            raise ValueError("middle open and fist values must differ")
-        self.middle_open = middle_open
-        self.middle_fist = middle_fist
-        self.middle_span = middle_span
+    def __init__(self) -> None:
         self.reference_quaternion: np.ndarray | None = None
         self.quaternion = np.array((1.0, 0.0, 0.0, 0.0))
         self.position = np.array((0.0, 0.0, 0.31))
@@ -118,13 +112,7 @@ class FirstBoardMapper:
         self.reference_quaternion = None
 
     def update(self, frame: ReceivedFrame) -> HandFrame:
-        raw = float(frame.sensor.flex_raw[2])
-        if self.middle_open is None:
-            self.middle_open = raw
-        fist = self.middle_fist
-        if fist is None:
-            fist = self.middle_open + self.middle_span
-        bend = float(np.clip((raw - self.middle_open) / (fist - self.middle_open), 0.0, 1.0))
+        bend = float(np.clip(frame.sensor.flex_raw[2] / 4095.0, 0.0, 1.0))
 
         if frame.reset:
             self.reset_orientation()

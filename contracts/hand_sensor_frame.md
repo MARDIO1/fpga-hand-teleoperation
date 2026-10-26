@@ -19,7 +19,7 @@ remain available for optional diagnostics.
 | 32 | `float32[4]` | wrist quaternion, WXYZ |
 | 48 | `float32[3]` | diagnostic linear acceleration |
 | 60 | `float32[3]` | diagnostic angular velocity |
-| 72 | `uint16[5]` | bend inputs; board-calibrated values use 0..4095 |
+| 72 | `uint16[5]` | board-calibrated bend: 0 = open, 4095 = fully bent |
 | 82 | `uint16` | reserved |
 
 The PC rejects duplicate and out-of-order sequences. A missing source holds its

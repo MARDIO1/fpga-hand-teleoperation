@@ -32,14 +32,14 @@ uv run python mano_controller.py
 Receive the first-board live stream (middle-finger strain plus dorsal IMU):
 
 ```powershell
-uv run python live_hand_receiver.py --middle-span 600
+uv run python live_hand_receiver.py
 ```
 
 The receiver listens on UDP port 47000 and reuses the 84-byte `HAND v2` sensor
-packet. If `--middle-open` is omitted, the first packet is captured as the open
-value. Use a negative `--middle-span` when the raw value decreases during flexion.
-The first valid IMU quaternion is the display reference orientation. Missing UDP
-packets hold the last pose; duplicate and out-of-order sequences are rejected.
+packet. Strain calibration runs on the Zynq PS, so each bend arrives as 0 (open)
+through 4095 (fully bent). The first valid IMU quaternion is the display reference
+orientation. Missing UDP packets hold the last pose; duplicate and out-of-order
+sequences are rejected.
 
 Replay another sequence with `--sequence path/to/sequence.npz`. The arrays are
 `timestamp_us`, `camera_valid`, `wrist_xyz`, `wrist_quaternion_wxyz`, `flex_raw`,

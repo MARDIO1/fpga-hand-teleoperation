@@ -28,11 +28,11 @@ class LiveHandUdpTest(unittest.TestCase):
         self.assertEqual(int(frame.sensor.flex_raw[2]), 2048)
 
     def test_middle_only_and_imu_zero(self):
-        mapper = FirstBoardMapper(1000, 3000)
-        first = mapper.update(decode_packet(packet(0, 1000, (0.7071068, 0.0, 0.0, 0.7071068))))
-        second = mapper.update(decode_packet(packet(1, 2000, (1.0, 0.0, 0.0, 0.0))))
+        mapper = FirstBoardMapper()
+        first = mapper.update(decode_packet(packet(0, 0, (0.7071068, 0.0, 0.0, 0.7071068))))
+        second = mapper.update(decode_packet(packet(1, 2048, (1.0, 0.0, 0.0, 0.0))))
         np.testing.assert_allclose(first.wrist_quaternion_wxyz, (1, 0, 0, 0), atol=1e-6)
-        np.testing.assert_allclose(second.bend, (0, 0, 0.5, 0, 0))
+        np.testing.assert_allclose(second.bend, (0, 0, 2048 / 4095, 0, 0))
         self.assertAlmostEqual(np.linalg.norm(second.wrist_quaternion_wxyz), 1.0)
 
     def test_bad_packet_is_rejected(self):
