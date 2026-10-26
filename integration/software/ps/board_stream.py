@@ -67,6 +67,7 @@ def main():
     latest_strain = None
     last_imu = None
     last_errors = None
+    last_imu_time = time.monotonic()
     sequence = 0
     sent = 0
     next_send = time.monotonic()
@@ -77,14 +78,18 @@ def main():
         strain_mode), file=sys.stderr)
     try:
         with StrainSerial(args.device) as strain:
+            latest_strain = strain.read_frame(2.0)
+            last_strain_time = time.monotonic()
             while True:
                 frames = strain.poll(0.0)
                 if frames:
                     latest_strain = frames[-1]
+                    last_strain_time = time.monotonic()
 
                 sample = read_sample(mmio)
                 if sample is not None and sample.sequence != last_imu:
                     last_imu = sample.sequence
+                    last_imu_time = time.monotonic()
                     if last_errors is not None and sample.errors != last_errors:
                         estimator = Attitude(args.calibration_samples)
                         print("I2C recovery: restart stationary calibration", file=sys.stderr)
@@ -99,6 +104,10 @@ def main():
                     pose = None
 
                 now = time.monotonic()
+                if now - last_strain_time > 0.5:
+                    raise RuntimeError("No fresh strain frame for 0.5 s")
+                if now - last_imu_time > 2.0:
+                    raise RuntimeError("No fresh IMU sample for 2 s")
                 if pose is not None and latest_strain is not None and now >= next_send:
                     bend = calibration.map(latest_strain.raw)
                     udp.sendto(packet(sequence, pose["timestamp_us"],

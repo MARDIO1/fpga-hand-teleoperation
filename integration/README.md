@@ -34,3 +34,18 @@ The PS reads `/dev/ttyUSB0`, solves the MPU6050 attitude, maps the calibrated
 middle-finger bend, and sends `HAND v2` to `192.168.137.1:47000` at 100 Hz. Camera
 position is invalid in this first-board version, so the PC display holds its
 default wrist position.
+
+## Current hardware status
+
+- F103 + CH340 alone: 100.00 Hz for 500 frames, no CRC or sequence errors.
+- MPU6050 overlay alone: I2C errors 0, dropped samples 0, about 500 pose updates/s.
+- Combined attempt: after loading the MPU overlay, the onboard USB Hub repeatedly
+  reports `clear tt ... error -71`; `/dev/ttyUSB0` remains present but returns no
+  strain frames. A power cycle restores UART until the next combined attempt.
+- Software `HAND v2` end to end: 240/240 packets received, 0 dropped, 0 rejected,
+  and the received pose was rendered by MANO.
+
+The combined hardware path is therefore not accepted yet. The failure is below
+the UART decoder, at the Hub/full-speed USB transaction layer. Do not automatically
+reset the whole Hub. The next physical test should remove the unused Wi-Fi dongle
+from the shared Hub, or bypass USB with a verified 3.3 V PS UART input.
