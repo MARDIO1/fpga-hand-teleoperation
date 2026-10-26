@@ -5,7 +5,7 @@ MCU-side acquisition path for the strain module.
 
 - MCU: STM32F103C8T6, 72 MHz (HSE + PLL x9)
 - ADC: ADC1_IN2 on PA2, 12-bit, 239.5-cycle sampling time, polling mode (HAL)
-- UART: USART1, PA9 (TX) / PA10 (RX), 115200-8-N-1, `printf` retargeted to USART1
+- UART: USART1, PA9 (TX) / PA10 (RX), 115200-8-N-1
 - IDE: Keil MDK-ARM (ArmCC V5.06, C99, MicroLIB)
 
 ## Wiring
@@ -27,13 +27,11 @@ Do not exceed 3.3 V on the ADC input.
 
 ## Output
 
-Every 500 ms the firmware prints one line at 115200 baud:
-
-```
-ADC=4095  Voltage=3.300 V
-```
-
-The raw value is the 12-bit ADC result; voltage is `raw * 3300 / 4095` in mV.
+The firmware sends the fixed 28-byte `STRN` frame from
+[`contracts/strain_uart.md`](../../../contracts/strain_uart.md) at 100 Hz. The
+current one-sensor bring-up writes PA2 into the middle-finger slot and leaves the
+other four channels at zero. The MCU sends raw ADC values only; calibration and
+bend mapping run on the Zynq PS.
 
 ## Layout
 
