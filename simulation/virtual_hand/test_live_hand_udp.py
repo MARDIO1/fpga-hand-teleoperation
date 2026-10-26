@@ -1,0 +1,60 @@
+"""Focused tests for the first-board UDP receiver and mapper."""
+
+import struct
+import socket
+import unittest
+
+import numpy as np
+
+from live_hand_udp import (FirstBoardMapper, MAGIC, SENSOR, SENSOR_PACKET,
+                           UdpSensorReceiver, VERSION, decode_packet)
+
+
+def packet(sequence: int, middle: int, quaternion=(1.0, 0.0, 0.0, 0.0)) -> bytes:
+    return SENSOR_PACKET.pack(
+        MAGIC, VERSION, SENSOR, sequence, sequence * 10_000,
+        sequence == 0, 0, 1, 0,
+        0.0, 0.0, 0.0, *quaternion,
+        0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        0, 0, middle, 0, 0, 0,
+    )
+
+
+class LiveHandUdpTest(unittest.TestCase):
+    def test_packet_layout(self):
+        frame = decode_packet(packet(7, 2048))
+        self.assertEqual(SENSOR_PACKET.size, 84)
+        self.assertEqual(frame.sequence, 7)
+        self.assertEqual(int(frame.sensor.flex_raw[2]), 2048)
+
+    def test_middle_only_and_imu_zero(self):
+        mapper = FirstBoardMapper(1000, 3000)
+        first = mapper.update(decode_packet(packet(0, 1000, (0.7071068, 0.0, 0.0, 0.7071068))))
+        second = mapper.update(decode_packet(packet(1, 2000, (1.0, 0.0, 0.0, 0.0))))
+        np.testing.assert_allclose(first.wrist_quaternion_wxyz, (1, 0, 0, 0), atol=1e-6)
+        np.testing.assert_allclose(second.bend, (0, 0, 0.5, 0, 0))
+        self.assertAlmostEqual(np.linalg.norm(second.wrist_quaternion_wxyz), 1.0)
+
+    def test_bad_packet_is_rejected(self):
+        with self.assertRaises(ValueError):
+            decode_packet(struct.pack("<I", MAGIC))
+
+    def test_udp_receiver_keeps_latest_and_counts_gap(self):
+        receiver = UdpSensorReceiver("127.0.0.1", 0)
+        sender = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            address = receiver.socket.getsockname()
+            sender.sendto(packet(2, 1200), address)
+            sender.sendto(packet(4, 1800), address)
+            latest = receiver.poll()
+            self.assertIsNotNone(latest)
+            self.assertEqual(latest.sequence, 4)
+            self.assertEqual(receiver.received, 2)
+            self.assertEqual(receiver.dropped, 1)
+        finally:
+            sender.close()
+            receiver.close()
+
+
+if __name__ == "__main__":
+    unittest.main()
