@@ -1,6 +1,6 @@
 # Vision module
 
-Owner workspace for stereo capture, preprocessing and marker reconstruction. Migrate selected sources here; do not copy the old repository history or generated Vivado state.
+Owner workspace for camera capture, preprocessing and wrist-position reconstruction. Migrate selected sources here; do not copy the old repository history or generated Vivado state.
 
 - `rtl/`, `hls/`: implementation sources
 - `sim/`, `tests/`: module simulation and regression

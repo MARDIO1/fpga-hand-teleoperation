@@ -6,9 +6,9 @@ ACZ7015/Zynq-7015 hand-observation pipeline developed as three independently tes
 
 | Area | Responsibility | Standalone result |
 | --- | --- | --- |
-| `modules/vision` | Stereo cameras, preprocessing and marker XYZ output | Packaged vision IP and module test bitstream |
+| `modules/vision` | Camera preprocessing and wrist XYZ output | Packaged vision IP and module test bitstream |
 | `modules/strain` | Five-channel strain acquisition and preprocessing | Packaged strain IP and module test bitstream |
-| `modules/fusion` | Marker/strain mapping, filtering and hand-state reconstruction | Packaged fusion IP and module test bitstream |
+| `modules/fusion` | Camera/IMU/strain fusion and hand-state reconstruction | Packaged fusion IP and module test bitstream |
 | `integration` | Frame synchronization, PS control and final ACZ7015 design | The final combined bitstream |
 
 Each module owns its sources, simulation, data, Vivado test project and exported artifacts. A module bitstream proves that module on hardware; it is not linked into the final image. `integration/vivado` consumes packaged IP from the three module areas and is the only place that produces the combined board bitstream.

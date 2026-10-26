@@ -1,6 +1,8 @@
 # Fusion module
 
-Floating-point reconstruction baseline. Inputs are already-decoded marker XYZ values plus five strain values; the module does not contain camera processing or ADC acquisition.
+Floating-point reconstruction baseline. Inputs are camera wrist XYZ, one dorsal-IMU
+quaternion/acceleration/gyro sample, and five strain values. The core infers finger
+spread from bend and uses bounded inertial prediction only during short camera loss.
 
 ## Layout
 

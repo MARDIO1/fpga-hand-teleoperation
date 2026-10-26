@@ -2,6 +2,7 @@
 .venv/
 .menagerie-cache/
 .uv-cache/
+simulation/virtual_hand/.runtime/
 __pycache__/
 *.py[cod]
 .pytest_cache/

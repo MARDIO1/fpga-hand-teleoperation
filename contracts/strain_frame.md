@@ -1,4 +1,4 @@
-# StrainFrame v0.1
+# StrainFrame v0.2
 
 Produced by the strain module and consumed by frame synchronization/fusion.
 
@@ -9,4 +9,8 @@ Produced by the strain module and consumed by frame synchronization/fusion.
 | timestamp_us | `uint32` | Sample time in microseconds |
 | raw[5] | `uint16` | Thumb through little-finger raw bend values |
 
-The integration block retains the newest complete strain frame whose timestamp is not later than the marker frame being solved.
+The PS retains the newest complete strain frame and assigns its monotonic arrival
+time to the common camera/IMU timeline. The source timestamp remains available
+for spacing and packet-loss diagnostics.
+
+The F103 wire representation is defined in `strain_uart.md`.
