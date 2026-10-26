@@ -35,6 +35,22 @@ Receive the first-board live stream (middle-finger strain plus dorsal IMU):
 uv run python live_hand_receiver.py
 ```
 
+For a finite end-to-end smoke test without opening the viewer:
+
+```powershell
+uv run python live_hand_receiver.py --headless --seconds 10
+```
+
+To view the complete UDP/display path without calibrated hardware, start the
+viewer above and run this in a second terminal:
+
+```powershell
+uv run python demo_udp_sender.py --seconds 30
+```
+
+The demo uses the same `HAND v2` packets and MANO receiver as the board. It is a
+programmed input source, not a hardware-validation result.
+
 The receiver listens on UDP port 47000 and reuses the 84-byte `HAND v2` sensor
 packet. Strain calibration runs on the Zynq PS, so each bend arrives as 0 (open)
 through 4095 (fully bent). The first valid IMU quaternion is the display reference

@@ -25,6 +25,11 @@ Then keep the hand still for the first two seconds and start the SSH-run streame
 sudo python3 integration/software/ps/board_stream.py
 ```
 
+If no calibration file exists, the default `auto` mode enters an explicit preview:
+the first sample is the zero point and the absolute change drives bend over a
+600-count span. Use `--strain-mode calibrated` to require a completed calibration,
+or `--strain-mode preview --preview-span 600` to force the uncalibrated display.
+
 The PS reads `/dev/ttyUSB0`, solves the MPU6050 attitude, maps the calibrated
 middle-finger bend, and sends `HAND v2` to `192.168.137.1:47000` at 100 Hz. Camera
 position is invalid in this first-board version, so the PC display holds its

@@ -35,6 +35,17 @@ class LiveHandUdpTest(unittest.TestCase):
         np.testing.assert_allclose(second.bend, (0, 0, 2048 / 4095, 0, 0))
         self.assertAlmostEqual(np.linalg.norm(second.wrist_quaternion_wxyz), 1.0)
 
+    def test_all_bends_and_camera_position(self):
+        payload = SENSOR_PACKET.pack(
+            MAGIC, VERSION, SENSOR, 0, 0, 1, 1, 1, 0,
+            0.1, 0.2, 0.3, 1.0, 0.0, 0.0, 0.0,
+            0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+            0, 1024, 2048, 3071, 4095, 0,
+        )
+        hand = FirstBoardMapper().update(decode_packet(payload))
+        np.testing.assert_allclose(hand.wrist_xyz, (0.1, 0.2, 0.3))
+        np.testing.assert_allclose(hand.bend, np.asarray((0, 1024, 2048, 3071, 4095)) / 4095)
+
     def test_bad_packet_is_rejected(self):
         with self.assertRaises(ValueError):
             decode_packet(struct.pack("<I", MAGIC))

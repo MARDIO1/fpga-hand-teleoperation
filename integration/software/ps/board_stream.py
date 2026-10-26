@@ -14,7 +14,7 @@ sys.path.insert(0, str(ROOT / "modules" / "strain" / "software" / "ps"))
 
 from attitude import Attitude
 from run_mpu6050 import read_sample
-from strain_uart import Calibration, StrainSerial
+from strain_uart import Calibration, PreviewCalibration, StrainSerial
 
 
 HAND = struct.Struct("<IHHIIBBBB13f5HH")
@@ -38,20 +38,29 @@ def main():
     parser.add_argument("--base", type=lambda value: int(value, 0), default=0x43c10000)
     parser.add_argument("--device", default="/dev/ttyUSB0")
     parser.add_argument("--calibration", type=Path, default=DEFAULT_CALIBRATION)
+    parser.add_argument("--strain-mode", choices=("auto", "calibrated", "preview"), default="auto")
+    parser.add_argument("--preview-span", type=float, default=600.0)
     parser.add_argument("--host", default="192.168.137.1")
     parser.add_argument("--port", type=int, default=47000)
     parser.add_argument("--rate", type=float, default=100.0)
     parser.add_argument("--position", type=float, nargs=3, default=(0.0, 0.0, 0.31))
     parser.add_argument("--calibration-samples", type=int, default=1000)
+    parser.add_argument("--seconds", type=float, default=0.0,
+                        help="run duration; zero means until interrupted")
     args = parser.parse_args()
-    if args.rate <= 0 or args.calibration_samples < 2:
-        parser.error("rate must be positive and calibration needs at least two samples")
+    if args.rate <= 0 or args.preview_span <= 0 or args.calibration_samples < 2 or args.seconds < 0:
+        parser.error("rates and spans must be positive; seconds must be nonnegative")
 
     from pynq import MMIO, Overlay
 
     Overlay(str(args.bitstream.resolve()))
     mmio = MMIO(args.base, 0x1000)
-    calibration = Calibration.load(args.calibration)
+    if args.strain_mode == "calibrated" or (args.strain_mode == "auto" and args.calibration.exists()):
+        calibration = Calibration.load(args.calibration)
+        strain_mode = "calibrated"
+    else:
+        calibration = PreviewCalibration(span=args.preview_span)
+        strain_mode = "preview"
     estimator = Attitude(args.calibration_samples)
     destination = (args.host, args.port)
     udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -62,8 +71,10 @@ def main():
     sent = 0
     next_send = time.monotonic()
     last_report = next_send
+    started = next_send
 
-    print("Keep the hand still for the two-second IMU calibration.", file=sys.stderr)
+    print("strain_mode={}; keep the hand still for the two-second IMU calibration".format(
+        strain_mode), file=sys.stderr)
     try:
         with StrainSerial(args.device) as strain:
             while True:
@@ -105,6 +116,8 @@ def main():
                         latest_strain.sequence if latest_strain else None,
                         strain.decoder.rejected), file=sys.stderr)
                     last_report = now
+                if args.seconds and now - started >= args.seconds:
+                    break
                 time.sleep(0.0002)
     except KeyboardInterrupt:
         return 0

@@ -141,3 +141,22 @@ class Calibration:
                 bend = left[1] + (value - left[0]) * (right[1] - left[1]) / (right[0] - left[0])
             output[channel] = int(round(max(0.0, min(1.0, bend)) * 4095.0))
         return tuple(output)
+
+
+class PreviewCalibration:
+    """Show uncalibrated motion as bend magnitude from the startup value."""
+
+    def __init__(self, channel=2, span=600):
+        if channel not in range(5) or span <= 0:
+            raise ValueError("Invalid preview channel or span")
+        self.channel = channel
+        self.span = float(span)
+        self.baseline = None
+
+    def map(self, raw):
+        if self.baseline is None:
+            self.baseline = raw[self.channel]
+        output = [0] * 5
+        bend = min(1.0, abs(raw[self.channel] - self.baseline) / self.span)
+        output[self.channel] = int(round(bend * 4095.0))
+        return tuple(output)

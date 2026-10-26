@@ -11,7 +11,7 @@ import unittest
 MODULE = Path(__file__).resolve().parents[1] / "software" / "ps"
 sys.path.insert(0, str(MODULE))
 
-from strain_uart import Calibration, Decoder, FRAME, crc16_ccitt
+from strain_uart import Calibration, Decoder, FRAME, PreviewCalibration, crc16_ccitt
 
 
 def packet(sequence=7, raw=(1, 2, 3, 4, 5)):
@@ -56,6 +56,12 @@ class CalibrationTest(unittest.TestCase):
             path = Path(directory) / "calibration.json"
             path.write_text(json.dumps(data), encoding="utf-8")
             self.assertEqual(Calibration.load(path).map((0, 0, 2000, 0, 0))[2], 2048)
+
+    def test_preview_uses_absolute_change_from_startup(self):
+        preview = PreviewCalibration(channel=2, span=600)
+        self.assertEqual(preview.map((0, 0, 3000, 0, 0))[2], 0)
+        self.assertEqual(preview.map((0, 0, 2700, 0, 0))[2], 2048)
+        self.assertEqual(preview.map((0, 0, 3700, 0, 0))[2], 4095)
 
 
 if __name__ == "__main__":

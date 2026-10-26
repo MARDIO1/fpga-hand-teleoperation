@@ -112,7 +112,10 @@ class FirstBoardMapper:
         self.reference_quaternion = None
 
     def update(self, frame: ReceivedFrame) -> HandFrame:
-        bend = float(np.clip(frame.sensor.flex_raw[2] / 4095.0, 0.0, 1.0))
+        bends = np.clip(frame.sensor.flex_raw.astype(float) / 4095.0, 0.0, 1.0)
+
+        if frame.sensor.camera_valid:
+            self.position = np.asarray(frame.sensor.wrist_xyz, dtype=float).copy()
 
         if frame.reset:
             self.reset_orientation()
@@ -127,7 +130,5 @@ class FirstBoardMapper:
                 self.quaternion = _multiply_quaternions(quaternion, reference_inverse)
                 self.quaternion /= np.linalg.norm(self.quaternion)
 
-        bends = np.zeros(5)
-        bends[2] = bend
         return HandFrame(frame.sensor.timestamp_us, self.position.copy(),
                          self.quaternion.copy(), bends)
