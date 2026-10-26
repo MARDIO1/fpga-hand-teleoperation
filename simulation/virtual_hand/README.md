@@ -35,6 +35,14 @@ Receive the first-board live stream (middle-finger strain plus dorsal IMU):
 uv run python live_hand_receiver.py
 ```
 
+Enable gravity, friction, contact and a small table with a free ball, cube and
+cylinder by adding `--grasp-scene`:
+
+```powershell
+uv run python live_hand_receiver.py --grasp-scene
+uv run python mano_controller.py --grasp-scene
+```
+
 For a finite end-to-end smoke test without opening the viewer:
 
 ```powershell

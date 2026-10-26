@@ -17,13 +17,15 @@ def main() -> int:
     parser.add_argument("--headless", action="store_true")
     parser.add_argument("--seconds", type=float, default=0.0)
     parser.add_argument("--output", type=Path, help="save the final received pose as PNG")
+    parser.add_argument("--grasp-scene", action="store_true",
+                        help="enable gravity, contact and simple free objects")
     args = parser.parse_args()
     if args.seconds < 0:
         parser.error("seconds must be nonnegative")
 
     receiver = UdpSensorReceiver(args.bind, args.port)
     mapper = FirstBoardMapper()
-    controller = ManoController()
+    controller = ManoController(grasp_scene=args.grasp_scene)
     started = time.monotonic()
     latest = None
     print(f"listening udp://{args.bind}:{args.port}")
@@ -34,7 +36,10 @@ def main() -> int:
                 if packet is not None:
                     latest = mapper.update(packet)
                 if latest is not None:
-                    controller.apply(latest)
+                    if args.grasp_scene:
+                        controller.step(latest)
+                    else:
+                        controller.apply(latest)
                 time.sleep(1.0 / 60.0)
         else:
             import mujoco.viewer
@@ -44,7 +49,10 @@ def main() -> int:
                     if packet is not None:
                         latest = mapper.update(packet)
                     if latest is not None:
-                        controller.apply(latest)
+                        if args.grasp_scene:
+                            controller.step(latest)
+                        else:
+                            controller.apply(latest)
                     viewer.sync()
                     time.sleep(1.0 / 60.0)
     finally:

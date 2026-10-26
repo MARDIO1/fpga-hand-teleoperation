@@ -13,6 +13,7 @@ import numpy as np
 
 from hand_sequence import (FINGERS, WristTracker, demo_sequence, load_sequence,
                            save_sequence, static_frame)
+from grasp_scene import OBJECT_BODY
 from mano_mapping import map_hand_pose
 
 
@@ -39,11 +40,16 @@ def _load_upstream():
 
 
 class ManoController:
-    def __init__(self, width: int = 420, height: int = 420) -> None:
+    def __init__(self, width: int = 420, height: int = 420,
+                 grasp_scene: bool = False) -> None:
         build_model, build_indexer, hide_collisions = _load_upstream()
-        self.model, _ = build_model(HAND_DIR, gravity=0.0, floor_z=-0.12,
+        self.physics = grasp_scene
+        self.model, _ = build_model(HAND_DIR,
+                                    gravity=-9.81 if grasp_scene else 0.0,
+                                    floor_z=-0.12,
                                     cam_pos="0 -0.62 0.38", lookat="0 0 0.38",
-                                    actuated=False)
+                                    object_body=OBJECT_BODY if grasp_scene else "",
+                                    actuated=grasp_scene)
         hide_collisions(self.model)
         self.data = mujoco.MjData(self.model)
         self.to_qpos = build_indexer(self.model)
@@ -52,14 +58,38 @@ class ManoController:
             mujoco.mj_id2name(self.model, mujoco.mjtObj.mjOBJ_JOINT, joint):
             int(self.model.jnt_qposadr[joint]) for joint in range(self.model.njnt)
         }
+        self.target_qpos = self.model.qpos0.copy()
+        self.actuator_qpos = np.asarray([
+            self.model.jnt_qposadr[self.model.actuator_trnid[index, 0]]
+            for index in range(self.model.nu)
+        ], dtype=np.int32)
+        self.initialized = False
 
     def close(self) -> None:
         self.renderer.close()
 
     def apply(self, sensor_frame) -> dict:
         payload = map_hand_pose(sensor_frame).as_upstream_frame()
-        self.data.qpos[:] = self.model.qpos0
-        self.to_qpos(payload, self.data.qpos)
+        if not self.physics:
+            self.data.qpos[:] = self.model.qpos0
+            self.to_qpos(payload, self.data.qpos)
+            mujoco.mj_forward(self.model, self.data)
+            return payload
+
+        self.target_qpos[:] = self.model.qpos0
+        self.to_qpos(payload, self.target_qpos)
+        self.data.ctrl[:] = self.target_qpos[self.actuator_qpos]
+        if not self.initialized:
+            self.data.qpos[self.actuator_qpos] = self.target_qpos[self.actuator_qpos]
+            mujoco.mj_forward(self.model, self.data)
+            self.initialized = True
+        return payload
+
+    def step(self, sensor_frame, seconds: float = 1.0 / 60.0) -> dict:
+        """Track one sensor pose while advancing contacts and free objects."""
+        payload = self.apply(sensor_frame)
+        for _ in range(max(1, round(seconds / self.model.opt.timestep))):
+            mujoco.mj_step(self.model, self.data)
         mujoco.mj_forward(self.model, self.data)
         return payload
 
@@ -144,14 +174,18 @@ def run_headless(args: argparse.Namespace) -> int:
 def run_window(args: argparse.Namespace) -> int:
     import mujoco.viewer
 
-    controller = ManoController()
+    controller = ManoController(grasp_scene=args.grasp_scene)
     frames = _sequence(args.sequence, args.frames)
     tracker = WristTracker()
     index = 0
     try:
         with mujoco.viewer.launch_passive(controller.model, controller.data) as viewer:
             while viewer.is_running():
-                controller.apply(tracker.update(frames[index]))
+                frame = tracker.update(frames[index])
+                if args.grasp_scene:
+                    controller.step(frame)
+                else:
+                    controller.apply(frame)
                 viewer.sync()
                 index = (index + 1) % len(frames)
                 if index == 0:
@@ -168,6 +202,8 @@ def main() -> int:
     parser.add_argument("--frames", type=int, default=240)
     parser.add_argument("--sequence", type=Path)
     parser.add_argument("--output", type=Path, default=PREVIEW)
+    parser.add_argument("--grasp-scene", action="store_true",
+                        help="enable gravity, contact and simple free objects")
     args = parser.parse_args()
     return run_headless(args) if args.headless else run_window(args)
 
