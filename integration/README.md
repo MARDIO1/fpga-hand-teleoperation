@@ -2,18 +2,23 @@
 
 This area owns the only combined ACZ7015 design. It will connect the vision, strain and fusion packaged IP, perform timestamp alignment and expose PS configuration/status plus UDP debugging.
 
-`modules/imu` supplies an independently tested MPU6050 prototype and ImuFrame
-contract. It is not yet connected here. Its ARM estimator and PL packet interface
-must remain together until a PL estimator is implemented; its standalone PL
-timestamp must be aligned to the common integration timebase before fusion.
+`modules/imu` supplies the independently tested MPU6050 IP. The current combined
+bitstream exposes it at `0x43C10000` and `hand_core` at `0x43C00000`. Attitude
+estimation and the hand-core call still run through PS software.
 
 Module test bitstreams are never nested or linked here. The final Vivado build consumes module IP and emits its own `.bit`, `.hwh` and `.xsa` under `export/bitstream/`.
 
 ## First-board bring-up
 
-The current one-IMU/one-strain version deliberately uses the standalone MPU6050
-overlay. Loading it replaces the active PL image. From the repository root on the
-board, first record the repeatable three-pose strain calibration:
+The current one-IMU/one-strain version uses the combined first-board overlay.
+After copying the repository to the board, run the bounded interface smoke test:
+
+```bash
+sudo python3 integration/software/ps/smoke_board.py
+```
+
+Use `--reuse-overlay` for later checks so restarting software does not reconfigure
+PL. Then record the repeatable three-pose strain calibration:
 
 ```bash
 python3 modules/strain/software/ps/calibrate_strain.py --channels 2
@@ -25,7 +30,7 @@ Then keep the hand still for the first two seconds and start the SSH-run streame
 sudo python3 integration/software/ps/board_stream.py
 ```
 
-If the MPU6050 overlay is already active, do not reconfigure PL again when
+If the combined overlay is already active, do not reconfigure PL again when
 restarting only the streamer:
 
 ```bash

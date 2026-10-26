@@ -19,7 +19,8 @@ from strain_uart import Calibration, PreviewCalibration, StrainSerial
 
 HAND = struct.Struct("<IHHIIBBBB13f5HH")
 MAGIC = 0x444e4148
-DEFAULT_BITSTREAM = ROOT / "modules" / "imu" / "export" / "bitstream" / "acz7015" / "v0.1.0" / "mpu6050.bit"
+DEFAULT_BITSTREAM = (ROOT / "integration" / "export" / "bitstream" / "acz7015" /
+                     "v0.1.0" / "first_board.bit")
 DEFAULT_CALIBRATION = ROOT / "modules" / "strain" / "data" / "strain_calibration.json"
 
 

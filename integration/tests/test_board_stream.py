@@ -1,6 +1,7 @@
 """Compatibility test between the board sender and PC HAND v2 decoder."""
 
 from pathlib import Path
+import struct
 import sys
 import unittest
 
@@ -11,6 +12,7 @@ sys.path.insert(0, str(ROOT / "simulation" / "virtual_hand"))
 
 from board_stream import HAND, packet, smooth_bend
 from live_hand_udp import decode_packet
+from smoke_board import HAND_INPUT, HAND_OUTPUT, run_hand_core
 
 
 class BoardStreamTest(unittest.TestCase):
@@ -30,6 +32,29 @@ class BoardStreamTest(unittest.TestCase):
         moved = smooth_bend(held, (0, 0, 2100, 0, 0), 0.25, 16)
         self.assertEqual(held[2], 2000)
         self.assertEqual(moved[2], 2025)
+
+    def test_hand_core_smoke_transaction_matches_hls_layout(self):
+        class FakeMmio:
+            def __init__(self):
+                self.writes = {}
+                output = HAND_OUTPUT.pack(*(0.0,) * 22, 2, 0)
+                self.output = struct.unpack("<23I", output)
+
+            def write(self, offset, value):
+                self.writes[offset] = value
+
+            def read(self, offset):
+                if offset == 0:
+                    return 2
+                return self.output[(offset - 0x100) // 4]
+
+        mmio = FakeMmio()
+        result = run_hand_core(mmio)
+        self.assertEqual(HAND_INPUT.size, 72)
+        self.assertEqual(HAND_OUTPUT.size, 92)
+        self.assertEqual(result, {"valid": 2, "state": 0})
+        self.assertEqual(mmio.writes[0x18], 1)
+        self.assertEqual(mmio.writes[0], 1)
 
 
 if __name__ == "__main__":
