@@ -1,0 +1,26 @@
+{
+  "date_local": "2026-10-25",
+  "phase": "60-second diagnostic-overlay test after manual wake, online calibration, raw and pose logging",
+  "stats": {
+    "received": 29526,
+    "poses": 28527,
+    "dropped_samples": 489,
+    "attitude_resets": 0,
+    "wall_output_hz": 475.3870820759913,
+    "packet_backpressure_drops": 0,
+    "steady_output_hz": 491.80034211293173,
+    "processing_us_p99": 1973.5109999601264,
+    "sample_age_us_p99": 3856,
+    "received_sensor_hz": 492.08910717885755,
+    "filter_us_median": 390.7230002369033,
+    "filter_us_p99": 580.3229996672599
+  },
+  "final_automatic_wake_probe": {
+    "status": 3,
+    "errors": 0,
+    "observed_samples": 2853,
+    "hardware_sample_hz": 499.9467097476286,
+    "manual_wake_required": false
+  },
+  "raw_captures_committed": false
+}
