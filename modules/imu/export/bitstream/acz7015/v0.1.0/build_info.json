@@ -1,0 +1,51 @@
+{
+  "module": "imu",
+  "version": "0.1.0",
+  "board": "ACZ7015",
+  "part": "xc7z015clg485-2",
+  "tool_version": "2025.2",
+  "clock_mhz": 100,
+  "post_route_wns_ns": 3.442,
+  "drc_violations": 0,
+  "files": {
+    "mpu6050.bit": "16952af88b0bf01058559582ae7613a05bc0b835beb315108846e32b8119c77c",
+    "mpu6050.hwh": "f0b375e771379c82d4ff3733cf9b857a23888d705a2ab6df700dda6b8f655602"
+  },
+  "rebuild_source_sha256": {
+    "rtl/i2c_register_master.v": "52549939ebed34dec0f4b064e88e7a22fa66313ff369dc840c57f7c6dc7a824c",
+    "rtl/mpu6050_acquisition.v": "3cefd16bb1d8fabd1f1443ff28e1c602f5485bb7b6ec6f821c9650e3d543e404",
+    "rtl/mpu6050_axi.v": "c3302673eb0caf2937e4c6a51b13af4280456f71d7b017267ed3f77d035cc40d",
+    "vivado/create_project.tcl": "f7b755f47b6ba57dabd72e50979aa83a8f2136bdcd43d31fbc1f90f1d6af6681",
+    "vivado/mpu6050.xdc": "afbb5f2213f02668673280cbd1a29683bda4a493eef096e75433561e2579cd58",
+    "vivado/package_ip.tcl": "2a58ea5c628845fb4f2827bd5a03c16a47f80c0e901d2ccca1be8b934c394e69"
+  },
+  "software_sha256": {
+    "software/pc/view_live.py": "2c8d21647a620e9869490cc6824b46a36f6d8fcedfe7556f67ffb9738312e6ca",
+    "software/ps/attitude.py": "e073dc53a85c37fdc5615664fa1e561ad565f62f9a795f761914e70a0a50c7bb",
+    "software/ps/diagnose_mpu6050.py": "ba50127930bceacb87503658e1274aeba46a35584f3c27e7b41c4fc284bd8850",
+    "software/ps/probe_board.py": "591c648e63ccd2fb84bb87ec9513262014591826f5e6a4b283e6710199ce97f5",
+    "software/ps/run_mpu6050.py": "c0fa12b615fbe23ac4d6fe209dc1b5a0b0a668dcf15e6170c13e5e5ae65cc41c"
+  },
+  "provenance": {
+    "source_workspace": "mpu6050_studio",
+    "artifact_origin": "final standalone Vivado build; imported unchanged",
+    "rtl_matches_module_sources": true,
+    "ip_repackaged_from_module_sources": true,
+    "bit_identical_rebuild_claimed": false
+  },
+  "validation": {
+    "date_local": "2026-10-25",
+    "timezone": "Asia/Shanghai",
+    "standalone_simulation_passed": true,
+    "ip_integrity_passed": true,
+    "automatic_wake_probe": {
+      "status": 3,
+      "errors": 0,
+      "observed_samples": 2853,
+      "hardware_sample_hz": 499.9467097476286,
+      "manual_wake_required": false
+    },
+    "combined_overlay_validated": false,
+    "continuous_low_latency_transport_validated": false
+  }
+}
