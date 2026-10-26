@@ -53,8 +53,14 @@ int main() {
 
             HandInput input{};
             input.timestamp_us = request.timestamp_us;
-            input.marker_valid = request.marker_valid;
-            std::memcpy(input.marker_xyz, request.marker_xyz, sizeof(input.marker_xyz));
+            input.camera_valid = request.camera_valid;
+            input.imu_valid = request.imu_valid;
+            std::memcpy(input.camera_position, request.camera_position, sizeof(input.camera_position));
+            std::memcpy(input.imu_quaternion, request.imu_quaternion, sizeof(input.imu_quaternion));
+            std::memcpy(input.linear_acceleration, request.linear_acceleration,
+                        sizeof(input.linear_acceleration));
+            std::memcpy(input.angular_velocity, request.angular_velocity,
+                        sizeof(input.angular_velocity));
             std::memcpy(input.flex_raw, request.flex_raw, sizeof(input.flex_raw));
 
             HandOutput output{};

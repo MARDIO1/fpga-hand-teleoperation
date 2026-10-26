@@ -19,10 +19,12 @@ constexpr std::uint32_t START = 1u << 0;
 constexpr std::uint32_t DONE = 1u << 1;
 constexpr auto TIMEOUT = std::chrono::milliseconds(5);
 
-static_assert(sizeof(HandInput) == 128, "HLS input layout changed");
-static_assert(offsetof(HandInput, marker_valid) == 4, "HLS input layout changed");
-static_assert(offsetof(HandInput, marker_xyz) == 8, "HLS input layout changed");
-static_assert(offsetof(HandInput, flex_raw) == 116, "HLS input layout changed");
+static_assert(sizeof(HandInput) == 72, "HLS input layout changed");
+static_assert(offsetof(HandInput, camera_position) == 8, "HLS input layout changed");
+static_assert(offsetof(HandInput, imu_quaternion) == 20, "HLS input layout changed");
+static_assert(offsetof(HandInput, linear_acceleration) == 36, "HLS input layout changed");
+static_assert(offsetof(HandInput, angular_velocity) == 48, "HLS input layout changed");
+static_assert(offsetof(HandInput, flex_raw) == 60, "HLS input layout changed");
 static_assert(sizeof(HandOutput) == 92, "HLS output layout changed");
 static_assert(offsetof(HandOutput, rotation) == 12, "HLS output layout changed");
 static_assert(offsetof(HandOutput, bend) == 48, "HLS output layout changed");
@@ -54,11 +56,11 @@ HandAccel::~HandAccel() {
 }
 
 bool HandAccel::run(const HandInput &input, bool reset, HandOutput &output) {
-    std::uint32_t input_words[32];
+    std::uint32_t input_words[18];
     std::uint32_t output_words[23];
     std::memcpy(input_words, &input, sizeof(input_words));
 
-    for (std::size_t i = 0; i < 32; ++i)
+    for (std::size_t i = 0; i < 18; ++i)
         registers_[INPUT + i] = input_words[i];
     registers_[RESET] = reset ? 1u : 0u;
     __sync_synchronize();
