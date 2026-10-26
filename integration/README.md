@@ -25,6 +25,13 @@ Then keep the hand still for the first two seconds and start the SSH-run streame
 sudo python3 integration/software/ps/board_stream.py
 ```
 
+If the MPU6050 overlay is already active, do not reconfigure PL again when
+restarting only the streamer:
+
+```bash
+sudo python3 integration/software/ps/board_stream.py --reuse-overlay
+```
+
 If no calibration file exists, the default `auto` mode enters an explicit preview:
 the first sample is the zero point and the absolute change drives bend over a
 600-count span. Use `--strain-mode calibrated` to require a completed calibration,
@@ -39,13 +46,25 @@ default wrist position.
 
 - F103 + CH340 alone: 100.00 Hz for 500 frames, no CRC or sequence errors.
 - MPU6050 overlay alone: I2C errors 0, dropped samples 0, about 500 pose updates/s.
-- Combined attempt: after loading the MPU overlay, the onboard USB Hub repeatedly
-  reports `clear tt ... error -71`; `/dev/ttyUSB0` remains present but returns no
-  strain frames. A power cycle restores UART until the next combined attempt.
+- Controlled retest: UART passed at 100.00 Hz before the MPU overlay. One overlay
+  load left UART healthy and did not increase the 171-message `error -71`
+  baseline; a later redundant reload increased the count and left
+  `/dev/ttyUSB0` present but unable to return a valid strain frame.
+- The onboard RTL8188FTV is soldered to CH334H port 4 and is not a removable
+  dongle. H5/H6 are GPIO0 I2C pins; the USB host uses PS MIO/ULPI, so no direct
+  FPGA-pin conflict has been found.
+- After a full power cycle, one overlay load followed by a `--reuse-overlay`
+  restart completed the hardware path: the PC received 486 HAND v2 packets with
+  0 dropped and 0 rejected, the USB `error -71` count remained 0, and a final
+  standalone UART check received 200 frames at 100.00 Hz with 0 rejected.
 - Software `HAND v2` end to end: 240/240 packets received, 0 dropped, 0 rejected,
   and the received pose was rendered by MANO.
 
-The combined hardware path is therefore not accepted yet. The failure is below
-the UART decoder, at the Hub/full-speed USB transaction layer. Do not automatically
-reset the whole Hub. The next physical test should remove the unused Wi-Fi dongle
-from the shared Hub, or bypass USB with a verified 3.3 V PS UART input.
+The first-board hardware path is accepted with the controlled startup above. The
+earlier failure was below the UART decoder, at the Hub/full-speed USB transaction
+layer, and appeared during some PL reconfigurations rather than steady-state
+computation. Its electrical cause is not yet proven. Do not try to remove the
+onboard Wi-Fi device and do not automatically reset the whole Hub; load the
+overlay once after a power cycle and use `--reuse-overlay` for streamer restarts.
+
+![First-board hardware pose](../simulation/virtual_hand/results/first_board_hardware.png)

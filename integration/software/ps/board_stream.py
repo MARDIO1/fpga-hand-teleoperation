@@ -35,6 +35,8 @@ def packet(sequence, timestamp_us, quaternion, bend, position, reset=False):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--bitstream", type=Path, default=DEFAULT_BITSTREAM)
+    parser.add_argument("--reuse-overlay", action="store_true",
+                        help="use the already-loaded MPU overlay without reconfiguring PL")
     parser.add_argument("--base", type=lambda value: int(value, 0), default=0x43c10000)
     parser.add_argument("--device", default="/dev/ttyUSB0")
     parser.add_argument("--calibration", type=Path, default=DEFAULT_CALIBRATION)
@@ -53,7 +55,8 @@ def main():
 
     from pynq import MMIO, Overlay
 
-    Overlay(str(args.bitstream.resolve()))
+    if not args.reuse_overlay:
+        Overlay(str(args.bitstream.resolve()))
     mmio = MMIO(args.base, 0x1000)
     if args.strain_mode == "calibrated" or (args.strain_mode == "auto" and args.calibration.exists()):
         calibration = Calibration.load(args.calibration)
