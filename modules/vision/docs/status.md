@@ -1,44 +1,20 @@
-# Vision migration status
+# Vision status, 2026-10-26
 
-Status as of 2026-10-25; hardware observations below refer to the external
-`vision_studio` workspace, not a hardware release from this repository.
+The selected standalone result is **compact-xyz-v0.1.0**, compiled and board-tested
+on 2026-10-26. It performs PL color-component detection and calibrated geometry,
+with PS C++ pairing and PC visualization. HDMI has been removed from this version.
+See [setup and rebuild](../vivado/compact_xyz/README.md) and
+[board evidence](../export/bitstream/acz7015/compact-xyz-v0.1.0/compact_validation.md).
 
-## Included
+The matching bit/HWH and seven key board-side file hashes were checked over SSH
+against the local latest release. The migration does not restart or reload hardware.
+The recorded full-cycle rate is 8.61 Hz, with 2 Hz preview; it is not 20/30 Hz XYZ.
+Reported numerical differences measure agreement with the PC implementation,
+not absolute physical accuracy. Calibration is experimental, units are millimetres,
+coordinates are relative to the physical left optical centre, IDs are frame-local.
+DDR tearing and simultaneous exposure remain unverified.
 
-- PC per-eye HSV segmentation and frame-local component centroids.
-- Raw RGB565/image loading, interactive threshold editing and offline preview.
-- Explicit live SSH snapshot access to the existing fixed-address capture buffer.
-- Synthetic regression tests for color, area/border checks, eye order, controls
-  and stream reads.
-
-## Hardware source and static reference
-
-The ch19-derived static HDMI baseline has displayed a 1280 x 720 grid without
-visible misalignment in a user observation. Other initializations showed horizontal
-wraparound. Repeat-start stability and the complete live stereo path remain to be
-accepted. The original ch19 bitstream with an 800 x 480 Python initialization test
-produced a black screen; that does not establish a defect in the complete official
-bare-metal example.
-
-Experimental capture, preprocessing/SAD RTL, their testbenches and standalone
-build scripts are included. A historical static HDMI bit/HWH pair is exported as
-`hdmi-baseline-v0.1.0`, with hashes, private address map and a matching test runner.
-No experimental stereo/depth binary is exported as a verified release.
-
-The prior capture/depth experiments contain frame-size error flags, single-buffer
-read/write risks and source/build/deployment version differences. A static image
-passing HDMI checks does not validate stereo frame identity or exposure alignment.
-No MarkerFrame packaged IP or completed FPGA repair claim accompanies this migration.
-
-## Remaining before XYZ integration
-
-1. Stable complete frames with source frame IDs and defined capture timing.
-2. Verified left/right temporal alignment and complete stereo calibration.
-3. One-to-one stereo matching and persistent identities, including repeated colors.
-4. Calibrated 3D reconstruction and independent spatial/dynamic error measurements.
-5. An adapter to the shared nine-marker, metre-unit, float32 MarkerFrame contract.
-
-The old approximate focal/baseline scale is not migrated as validated calibration.
-Neither 20 Hz point output nor 5 mm XYZ accuracy has been demonstrated. The existing
-160 x 180 integer-depth branch is not a substitute for marker-specific validation.
-The shared contract is unchanged; no data is connected to fusion or integration.
+The shared nine-marker metre/float32 MarkerFrame interface remains unchanged.
+No adapter, persistent identity, final integration, 5 mm accuracy or restart
+stability claim is made. The older static HDMI release and experimental SAD
+sources remain historical references; ingress V2 is excluded from this release.

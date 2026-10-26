@@ -26,3 +26,8 @@ User-suggested repositories were reviewed as references during HDMI work:
 No files from these repositories are copied by this migration. The last repository
 is a future color-processing reference, not an implemented dependency. No new
 dependency on them is introduced for building or running the migrated prototype.
+
+The compact XYZ release reuses the same camera vendor sources and AMD IP. Its
+HLS sources are selected from the owner workspace; generated HLS packages and the
+board-derived bit/HWH are exported with their original notices. No new third-party
+reference implementation or blanket licence is introduced.

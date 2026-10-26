@@ -1,0 +1,56 @@
+{
+  "L": {
+    "red": {
+      "h_min": 165,
+      "h_max": 10,
+      "s_min": 100,
+      "v_min": 55
+    },
+    "yellow": {
+      "h_min": 22,
+      "h_max": 42,
+      "s_min": 90,
+      "v_min": 100
+    },
+    "green": {
+      "h_min": 43,
+      "h_max": 85,
+      "s_min": 80,
+      "v_min": 55
+    },
+    "blue": {
+      "h_min": 100,
+      "h_max": 134,
+      "s_min": 110,
+      "v_min": 55
+    }
+  },
+  "R": {
+    "red": {
+      "h_min": 155,
+      "h_max": 10,
+      "s_min": 100,
+      "v_min": 55
+    },
+    "yellow": {
+      "h_min": 22,
+      "h_max": 42,
+      "s_min": 35,
+      "v_min": 100
+    },
+    "green": {
+      "h_min": 43,
+      "h_max": 85,
+      "s_min": 55,
+      "v_min": 55
+    },
+    "blue": {
+      "h_min": 100,
+      "h_max": 134,
+      "s_min": 140,
+      "v_min": 100
+    }
+  },
+  "min_area": 80,
+  "max_area": 1500
+}

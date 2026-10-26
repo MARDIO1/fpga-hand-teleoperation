@@ -1,0 +1,6 @@
+# Preserve exact board/source bytes, including original CRLF endings.
+vivado/compact_xyz/** -text whitespace=cr-at-eol
+export/bitstream/acz7015/compact-xyz-v0.1.0/** -text whitespace=cr-at-eol
+data/samples/compact_xyz/** -text whitespace=cr-at-eol
+# Keep tool reports byte-identical to the published build evidence.
+export/bitstream/acz7015/compact-xyz-v0.1.0/*.rpt -whitespace
