@@ -11,5 +11,5 @@ Vivado state, reports and output artifacts remain ignored. Building does not
 program the board; loading `output/first_board.bit` is a separate manual step.
 
 The reviewed candidate is copied to `../export/bitstream/acz7015/v0.1.0/` only
-after implementation passes. It is still marked as not hardware-tested until a
-separate on-board smoke test is explicitly performed.
+after implementation passes. Its build metadata also records the separate
+on-board smoke-test result.

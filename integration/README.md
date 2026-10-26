@@ -64,6 +64,10 @@ default wrist position.
   standalone UART check received 200 frames at 100.00 Hz with 0 rejected.
 - Software `HAND v2` end to end: 240/240 packets received, 0 dropped, 0 rejected,
   and the received pose was rendered by MANO.
+- Combined `first_board.bit`: `hand_core` AXI transaction passed; MPU returned
+  1206 samples in 3 seconds with 0 I2C errors; UART returned 299 frames with 0
+  rejects; the PC received 1300 consecutive UDP packets with 0 drops or rejects.
+  USB `error -71` remained at 0 after the single PL load.
 
 The first-board hardware path is accepted with the controlled startup above. The
 earlier failure was below the UART decoder, at the Hub/full-speed USB transaction
