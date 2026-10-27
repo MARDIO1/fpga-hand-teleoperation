@@ -1,0 +1,9 @@
+.venv/
+.uv-cache/
+.menagerie-cache/
+__pycache__/
+*.png
+.runtime/
+recordings/
+orientation_calibration.json
+

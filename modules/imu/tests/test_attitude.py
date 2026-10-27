@@ -64,6 +64,35 @@ class AttitudeTests(unittest.TestCase):
             pose = f.update(sample(i))
         self.assertLess(abs(pose["roll_deg"]), 0.5)
 
+    def test_stationary_bias_tracking_holds_yaw(self):
+        f = Attitude(calibration_samples=20, stationary_samples=10,
+                     stationary_gyro_dps=0.5, bias_time_constant=1.0)
+        for i in range(20):
+            pose = f.update(sample(i))
+        for i in range(20, 2020):
+            pose = f.update(sample(i, gyro=(0, 0, 20)))
+        self.assertTrue(pose["stationary"])
+        self.assertAlmostEqual(pose["yaw_deg"], 0.0, delta=0.02)
+        self.assertGreater(pose["gyro_bias_rad_s"][2], 0.0)
+
+    def test_deliberate_slow_rotation_is_not_frozen(self):
+        f = Attitude(calibration_samples=20, stationary_samples=10,
+                     stationary_gyro_dps=0.35)
+        for i in range(20):
+            pose = f.update(sample(i))
+        for i in range(20, 520):
+            pose = f.update(sample(i, gyro=(0, 0, 66)))
+        self.assertFalse(pose["stationary"])
+        self.assertAlmostEqual(pose["yaw_deg"], 1.0, delta=0.03)
+
+    def test_gyro_scale_is_explicit(self):
+        f = Attitude(calibration_samples=20, gyro_scale=(1.0, 1.0, 1.01))
+        for i in range(20):
+            pose = f.update(sample(i))
+        for i in range(20, 520):
+            pose = f.update(sample(i, gyro=(0, 0, 5895)))
+        self.assertAlmostEqual(pose["yaw_deg"], 90.9, delta=0.01)
+
     def test_motion_restarts_calibration(self):
         f = Attitude(20)
         for i in range(19):

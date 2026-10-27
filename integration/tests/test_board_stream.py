@@ -18,13 +18,16 @@ from smoke_board import HAND_INPUT, HAND_OUTPUT, run_hand_core
 class BoardStreamTest(unittest.TestCase):
     def test_packet_matches_pc_decoder(self):
         payload = packet(9, 123456, (1.0, 0.0, 0.0, 0.0),
-                         (0, 0, 2048, 0, 0), (0.1, 0.2, 0.3), True)
+                         (0, 0, 2048, 0, 0), (0.1, 0.2, 0.3),
+                         (0.0, 0.0, 1.0), (0.1, -0.2, 0.3), True)
         decoded = decode_packet(payload)
         self.assertEqual(HAND.size, 84)
         self.assertEqual(decoded.sequence, 9)
         self.assertTrue(decoded.reset)
         self.assertTrue(decoded.imu_valid)
         self.assertEqual(int(decoded.sensor.flex_raw[2]), 2048)
+        self.assertEqual(tuple(decoded.sensor.linear_acceleration), (0.0, 0.0, 1.0))
+        self.assertAlmostEqual(decoded.sensor.angular_velocity[1], -0.2, places=6)
 
     def test_bend_filter_holds_jitter_and_tracks_motion(self):
         previous = smooth_bend(None, (0, 0, 2000, 0, 0), 0.25, 16)

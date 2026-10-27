@@ -24,12 +24,15 @@ DEFAULT_BITSTREAM = (ROOT / "integration" / "export" / "bitstream" / "acz7015" /
 DEFAULT_CALIBRATION = ROOT / "modules" / "strain" / "data" / "strain_calibration.json"
 
 
-def packet(sequence, timestamp_us, quaternion, bend, position, reset=False):
+def packet(sequence, timestamp_us, quaternion, bend, position,
+           acceleration=(0.0, 0.0, 0.0), angular_velocity=(0.0, 0.0, 0.0),
+           reset=False):
     return HAND.pack(MAGIC, 2, 1, sequence, timestamp_us & 0xffffffff,
                      int(reset), 0, 1, 0,
                      position[0], position[1], position[2],
                      quaternion[0], quaternion[1], quaternion[2], quaternion[3],
-                     0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                     acceleration[0], acceleration[1], acceleration[2],
+                     angular_velocity[0], angular_velocity[1], angular_velocity[2],
                      bend[0], bend[1], bend[2], bend[3], bend[4], 0)
 
 
@@ -56,12 +59,16 @@ def main():
     parser.add_argument("--bend-alpha", type=float, default=0.25)
     parser.add_argument("--bend-deadband", type=float, default=16.0)
     parser.add_argument("--position", type=float, nargs=3, default=(0.0, 0.0, 0.31))
-    parser.add_argument("--calibration-samples", type=int, default=1000)
+    parser.add_argument("--calibration-samples", type=int, default=2500)
+    parser.add_argument("--gyro-scale", type=float, nargs=3, default=(1.0, 1.0, 1.0),
+                        metavar=("GX", "GY", "GZ"),
+                        help="per-axis gyro scale; keep 1 1 1 until a measured turn test")
     parser.add_argument("--seconds", type=float, default=0.0,
                         help="run duration; zero means until interrupted")
     args = parser.parse_args()
     if (args.rate <= 0 or args.preview_span <= 0 or args.calibration_samples < 2
-            or args.seconds < 0 or not 0 < args.bend_alpha <= 1 or args.bend_deadband < 0):
+            or args.seconds < 0 or not 0 < args.bend_alpha <= 1 or args.bend_deadband < 0
+            or not all(value > 0 for value in args.gyro_scale)):
         parser.error("rates and spans must be positive; seconds must be nonnegative")
 
     from pynq import MMIO, Overlay
@@ -75,7 +82,7 @@ def main():
     else:
         calibration = PreviewCalibration(span=args.preview_span)
         strain_mode = "preview"
-    estimator = Attitude(args.calibration_samples)
+    estimator = Attitude(args.calibration_samples, gyro_scale=args.gyro_scale)
     destination = (args.host, args.port)
     udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     latest_strain = None
@@ -89,8 +96,9 @@ def main():
     last_report = next_send
     started = next_send
 
-    print("strain_mode={}; keep the hand still for the two-second IMU calibration".format(
-        strain_mode), file=sys.stderr)
+    calibration_seconds = args.calibration_samples / 500.0
+    print("strain_mode={}; keep the hand still for {:.1f}-second IMU calibration".format(
+        strain_mode, calibration_seconds), file=sys.stderr)
     try:
         with StrainSerial(args.device) as strain:
             latest_strain = strain.read_frame(2.0)
@@ -106,14 +114,16 @@ def main():
                     last_imu = sample.sequence
                     last_imu_time = time.monotonic()
                     if last_errors is not None and sample.errors != last_errors:
-                        estimator = Attitude(args.calibration_samples)
+                        estimator = Attitude(args.calibration_samples,
+                                             gyro_scale=args.gyro_scale)
                         print("I2C recovery: restart stationary calibration", file=sys.stderr)
                     last_errors = sample.errors
                     try:
                         pose = estimator.update(sample)
                     except ValueError as error:
                         print(str(error), file=sys.stderr)
-                        estimator = Attitude(args.calibration_samples)
+                        estimator = Attitude(args.calibration_samples,
+                                             gyro_scale=args.gyro_scale)
                         pose = estimator.update(sample)
                 else:
                     pose = None
@@ -130,7 +140,9 @@ def main():
                     bend = tuple(int(round(value)) for value in filtered_bend)
                     udp.sendto(packet(sequence, pose["timestamp_us"],
                                       pose["quaternion_wxyz"], bend,
-                                      args.position, sequence == 0), destination)
+                                      args.position, pose["acceleration_g"],
+                                      pose["angular_velocity_rad_s"],
+                                      sequence == 0), destination)
                     sequence = (sequence + 1) & 0xffffffff
                     sent += 1
                     next_send += 1.0 / args.rate
