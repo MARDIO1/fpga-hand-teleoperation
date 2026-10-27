@@ -11,11 +11,13 @@ Owner workspace for stereo capture, preprocessing and marker reconstruction. Mig
 
 ## Selected board version
 
-The final adopted version is [compact XYZ v0.1.0](vivado/compact_xyz/README.md),
-compiled and board-tested on 2026-10-26: PL color recognition and geometry, PS
-pairing, PC preview. Matching bit/HWH, HLS IP, calibration and validation evidence
-are published under export/. XYZ is experimental millimetres; the shared
-MarkerFrame/fusion adapter is not implemented.
+The selected version is [optimized XYZ v0.2.0](vivado/optimized_xyz/README.md),
+board-tested on 2026-10-27: **29.564 FPS** point-only, **28.620 FPS** with
+asynchronous preview capped at 2 Hz (600 frames each). Matching bit/HWH, frozen
+IP, software, calibration and evidence are published under export/.
+Coordinates are experimental millimetres; the shared MarkerFrame/fusion adapter
+is not implemented. The [compact v0.1.0](vivado/compact_xyz/README.md) remains a
+historical 8.61 Hz full-cycle baseline.
 
 ## Historical migrated baseline (2026-10-25)
 

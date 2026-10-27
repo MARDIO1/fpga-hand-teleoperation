@@ -1,0 +1,55 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2025.2 (win64) Build 6299465 Fri Nov 14 19:35:11 GMT 2025
+| Date         : Tue Oct 27 21:53:12 2026
+| Host         : LAPTOP-NRK35478 running 64-bit major release  (build 9200)
+| Command      : report_utilization -hierarchical -hierarchical_depth 3 -file E:/fpga_learn/vision_perf_lab_20261027/integration_optimized/board_test_20261027/hardware_hierarchy.rpt
+| Design       : system_wrapper
+| Device       : xc7z015clg485-2
+| Speed File   : -2
+| Design State : Routed
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Utilization Design Information
+
+Table of Contents
+-----------------
+1. Utilization by Hierarchy
+
+1. Utilization by Hierarchy
+---------------------------
+
++---------------------+--------------------------------------------+------------+------------+---------+------+-------+--------+--------+------------+
+|       Instance      |                   Module                   | Total LUTs | Logic LUTs | LUTRAMs | SRLs |  FFs  | RAMB36 | RAMB18 | DSP Blocks |
++---------------------+--------------------------------------------+------------+------------+---------+------+-------+--------+--------+------------+
+| system_wrapper      |                                      (top) |      26987 |      25893 |     536 |  558 | 30075 |     31 |     12 |         64 |
+|   (system_wrapper)  |                                      (top) |          0 |          0 |       0 |    0 |     0 |      0 |      0 |          0 |
+|   system_i          |                                     system |      26987 |      25893 |     536 |  558 | 30075 |     31 |     12 |         64 |
+|     mem_ic          |                            system_mem_ic_0 |        845 |        823 |      18 |    4 |   909 |      0 |      0 |          0 |
+|       s00_couplers  |                   s00_couplers_imp_1JBEQKJ |        173 |        165 |       8 |    0 |   214 |      0 |      0 |          0 |
+|       s01_couplers  |                    s01_couplers_imp_T6W3O2 |        113 |        111 |       2 |    0 |   135 |      0 |      0 |          0 |
+|       s02_couplers  |                    s02_couplers_imp_I163J4 |        172 |        164 |       8 |    0 |   212 |      0 |      0 |          0 |
+|       xbar          |                   system_mem_ic_imp_xbar_0 |        389 |        385 |       0 |    4 |   348 |      0 |      0 |          0 |
+|     camera          |                            system_camera_0 |        851 |        847 |       0 |    4 |  1093 |      8 |      1 |          0 |
+|       inst          |         system_camera_0_stereo_camera_axis |        851 |        847 |       0 |    4 |  1093 |      8 |      1 |          0 |
+|     camera_gpio     |                       system_camera_gpio_0 |        127 |        127 |       0 |    0 |   542 |      0 |      0 |          0 |
+|       U0            |              system_camera_gpio_0_axi_gpio |        127 |        127 |       0 |    0 |   542 |      0 |      0 |          0 |
+|     capture_vdma    |                      system_capture_vdma_0 |       1275 |       1171 |       8 |   96 |  1863 |      3 |      0 |          0 |
+|       U0            |             system_capture_vdma_0_axi_vdma |       1275 |       1171 |       8 |   96 |  1863 |      3 |      0 |          0 |
+|     ctrl_ic         |                           system_ctrl_ic_0 |        648 |        587 |       0 |   61 |   677 |      0 |      0 |          0 |
+|       s00_couplers  |                    s00_couplers_imp_R24LRG |        409 |        348 |       0 |   61 |   546 |      0 |      0 |          0 |
+|       xbar          |                  system_ctrl_ic_imp_xbar_0 |        239 |        239 |       0 |    0 |   131 |      0 |      0 |          0 |
+|     ingress         |                           system_ingress_0 |        676 |        590 |      86 |    0 |   786 |      0 |      0 |          0 |
+|       inst          | system_ingress_0_marker_ingress_control_v2 |        676 |        590 |      86 |    0 |   786 |      0 |      0 |          0 |
+|     marker_bridge   |                     system_marker_bridge_0 |        298 |        298 |       0 |    0 |   368 |      0 |      0 |          0 |
+|       inst          |  system_marker_bridge_0_marker_axis_bridge |        298 |        298 |       0 |    0 |   368 |      0 |      0 |          0 |
+|     marker_dma      |                        system_marker_dma_0 |       1082 |       1005 |       8 |   69 |  1639 |      1 |      1 |          0 |
+|       U0            |                system_marker_dma_0_axi_dma |       1082 |       1005 |       8 |   69 |  1639 |      1 |      1 |          0 |
+|     marker_geometry |                   system_marker_geometry_0 |      17466 |      16853 |     384 |  229 | 17069 |      8 |      0 |         56 |
+|       inst          |   system_marker_geometry_0_marker_geometry |      17466 |      16853 |     384 |  229 | 17069 |      8 |      0 |         56 |
+|     markers         |                           system_markers_0 |       3708 |       3582 |      32 |   94 |  5096 |     11 |     10 |          8 |
+|       inst          |             system_markers_0_glove_markers |       3708 |       3582 |      32 |   94 |  5096 |     11 |     10 |          8 |
++---------------------+--------------------------------------------+------------+------------+---------+------+-------+--------+--------+------------+
+* Note: The sum of lower-level cells may be larger than their parent cells total, due to cross-hierarchy LUT combining
+
+

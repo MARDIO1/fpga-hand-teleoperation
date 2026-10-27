@@ -1,0 +1,45 @@
+{
+  "status": "compiled_not_board_tested",
+  "baseline_time": "2026-10-27 19:50",
+  "build_completed_at": "2026-10-27T20:35:43.676693+08:00",
+  "target_part": "xc7z015clg485-2",
+  "clock_mhz": 100,
+  "resource_limit_percent": 60,
+  "baseline_bit_sha256": "a8f8740538d01dcaa5bedd1e1c34b32c04bf4bae74fcb2495287b45bf20944bc",
+  "optimized_bit_sha256": "74ee06b4e08f151b79a6a98472a7055930393c830b0127d5c14a28547e0e9418",
+  "optimized_hwh_sha256": "1e534899189c7b5cfa05dc8c457ccf3acd1e19ec985b8b1964f98557fc999ad3",
+  "resource_counts": {
+    "LUT": 26987.0,
+    "FF": 30075.0,
+    "DSP": 64.0,
+    "BRAM36": 37.0
+  },
+  "resource_percent": {
+    "LUT": 58.413419913419915,
+    "FF": 32.548701298701296,
+    "DSP": 40.0,
+    "BRAM36": 38.94736842105263
+  },
+  "constrained_setup_wns_ns": 0.898,
+  "constrained_hold_whs_ns": 0.047,
+  "control_fifo_joint_simulation": "PASS",
+  "addresses": {
+    "capture_vdma": 1124073472,
+    "camera_gpio": 1092616192,
+    "marker_dma": 1077936128,
+    "markers": 1136787456,
+    "marker_geometry": 1136918528,
+    "ingress": 1137049600
+  },
+  "diagnostic_registers_preserved": [
+    "0x40",
+    "0x44",
+    "0x48",
+    "0x4c"
+  ],
+  "board_loaded": false,
+  "limitations": [
+    "Inherited camera clock and I/O timing coverage limitations remain.",
+    "No board FPS or absolute XYZ accuracy validation in this build."
+  ]
+}
