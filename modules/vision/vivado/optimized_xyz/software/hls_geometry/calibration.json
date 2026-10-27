@@ -1,0 +1,7 @@
+{
+  "source": "output\\stereo_calibration\\session_20261026_13p6mm\\solution\\candidate_calibration.npz",
+  "sha256": "ce8610fed55be9c0b8ba0b4c1a66e3334500ce4ce4a8796222abb94be883c978",
+  "units": "mm",
+  "frame": "physical_left_camera_optical_center",
+  "experimental": true
+}

@@ -1,0 +1,12 @@
+Standalone HDMI baseline only; not the integration address map.
+VDMA MM2S       0x43000000  range 0x00010000
+Dynamic clock   0x43C00000  range 0x00010000
+VTC             0x43C10000  range 0x00010000
+Bridge GPIO     0x41200000  range 0x00010000
+  +0x00: video output bridge status; +0x08 bit 0: locked
+Reserved RAM    0x1E000000..0x1EFFFFFF (requires running device tree reservation)
+RGB565 frame    0x1E000000, width 1280, height 720, stride 2560 bytes
+Frame bytes     1843200
+PS I2C1        0xE0005000, EMIO; SiI9022A I2C address 0x39
+FCLK0          100 MHz
+Pixel timing   nominal 74.25 MHz, total 1650 x 750, configured 60 Hz

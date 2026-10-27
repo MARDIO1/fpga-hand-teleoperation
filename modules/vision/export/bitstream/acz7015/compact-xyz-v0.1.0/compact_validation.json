@@ -1,0 +1,80 @@
+{
+  "date": "2026-10-26",
+  "part": "xc7z015clg485-2",
+  "clock_mhz": 100,
+  "resource_counts": {
+    "lut": 26754,
+    "ff": 29790,
+    "bram36_tiles": 38.5,
+    "dsp": 64
+  },
+  "resource_percent": {
+    "lut": 57.91,
+    "ff": 32.24,
+    "bram": 40.53,
+    "dsp": 40
+  },
+  "resource_limit_percent": 60,
+  "setup_slack_ns": 0.572,
+  "hold_slack_ns": 0.04,
+  "removed": [
+    "HDMI output",
+    "display overlay HLS IP",
+    "display MM2S",
+    "button GPIO"
+  ],
+  "algorithms": {
+    "PL": [
+      "RGB565 HSV RLE CCL",
+      "sparse undistortion and rectification",
+      "DLT triangulation",
+      "left optical frame transform",
+      "positive-depth and 2px reprojection gate"
+    ],
+    "PS": [
+      "replaceable candidate selector",
+      "native C++ mutual unique matching",
+      "DMA and point publication"
+    ]
+  },
+  "calibration": {
+    "source": "output\\stereo_calibration\\session_20261026_13p6mm\\solution\\candidate_calibration.npz",
+    "sha256": "ce8610fed55be9c0b8ba0b4c1a66e3334500ce4ce4a8796222abb94be883c978",
+    "units": "mm",
+    "frame": "physical_left_camera_optical_center",
+    "experimental": true
+  },
+  "tests": {
+    "csim_points": 384,
+    "rtl_cosim_points": 12,
+    "rtl_cosim": "PASS",
+    "native_replay": {
+      "frames": 15,
+      "pairs": 130,
+      "max_xyz_error_mm": 1.9326762412674725e-12
+    },
+    "board_replay_pairs": 5,
+    "board_live_pairs": [
+      8,
+      7
+    ],
+    "board_xyz_reference_difference_max_mm": 8.53e-13
+  },
+  "performance": {
+    "recent_completed_hz": 8.61,
+    "recent_cycle_mean_ms": 116.1,
+    "recent_cycle_p95_ms": 151.8,
+    "capture_fps": 29.7,
+    "preview_fps": 2
+  },
+  "caveats": [
+    "experimental calibration, absolute accuracy not certified",
+    "frame-local pair IDs",
+    "DDR snapshot/exposure synchronization unverified",
+    "inherited non-dedicated camera PCLK route constraints"
+  ],
+  "sha256": {
+    "pl_stereo_compact_xyz.bit": "59f0614075072b7e0b8fbbea608924955fbb676e7b69f07e91ce97d577dc2a7a",
+    "pl_stereo_compact_xyz.hwh": "af982e14ecec73a0b3b190cce45a46326ec0fd70da5db3185010737acaada34b"
+  }
+}

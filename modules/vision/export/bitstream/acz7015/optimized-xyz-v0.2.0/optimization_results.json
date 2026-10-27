@@ -1,0 +1,54 @@
+{
+  "metrics": {
+    "points": {
+      "completed_fps": 29.564176700020315,
+      "complete_interval_mean_ms": 33.82472003691254,
+      "complete_interval_p95_ms": 35.24733850008488,
+      "complete_interval_p99_ms": 65.95640669982004,
+      "source_counter_fps": 29.932968525640373,
+      "point_publications": 600,
+      "preview_publications": 0,
+      "points_queue_dropped": 0,
+      "previews_queue_dropped": 0
+    },
+    "preview": {
+      "completed_fps": 28.619788931118922,
+      "complete_interval_mean_ms": 34.94085866275129,
+      "complete_interval_p95_ms": 34.40745174987114,
+      "complete_interval_p99_ms": 66.5846169996712,
+      "source_counter_fps": 29.956275578628528,
+      "point_publications": 600,
+      "preview_publications": 42,
+      "points_queue_dropped": 0,
+      "previews_queue_dropped": 0
+    }
+  },
+  "files_sha256": {
+    "software\\marker_ingress_v2\\run_direct_board.py": "a4568cf4152600f2499c2b5f50d6e6016ef77e3ae62304abd61704a2ace0d0b1",
+    "software\\hls_markers\\process_publisher.py": "207cfe63f9fed02f75bdcfb6b3f436b19d1d6ef208bf60ce36c587e7ec2fd7de",
+    "release\\pl_stereo_compact_optimized.bit": "74ee06b4e08f151b79a6a98472a7055930393c830b0127d5c14a28547e0e9418",
+    "release\\pl_stereo_compact_optimized.hwh": "1e534899189c7b5cfa05dc8c457ccf3acd1e19ec985b8b1964f98557fc999ad3",
+    "board_test_20261027\\hardware_hierarchy.rpt": "6dea04b532e298b8ecf44251e67d743832427a488cc5e28829efa923060c3944"
+  },
+  "board_state": {
+    "bitfile": "/home/xilinx/overlays/pl_stereo_hdmi/compact_optimized_20261027/pl_stereo_compact_optimized.bit",
+    "ips": [],
+    "bit_sha256": "74ee06b4e08f151b79a6a98472a7055930393c830b0127d5c14a28547e0e9418",
+    "fpga_state": "operating",
+    "fclk0_ctrl": "0x200500",
+    "controller": {
+      "0x0": "0x4d495632",
+      "0x4": "0x20b",
+      "0xc": "0x2",
+      "0x2c": "0x0",
+      "0x30": "0x70800",
+      "0x40": "0x1e3c1a80",
+      "0x44": "0xf",
+      "0x48": "0x100",
+      "0x4c": "0x1c200"
+    },
+    "dma_rx_status": "0x1002",
+    "vdma_status": "0x10001"
+  },
+  "timing_basis": "consecutive completion timestamps; excludes first three frames"
+}
