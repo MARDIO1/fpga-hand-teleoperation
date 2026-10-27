@@ -1,0 +1,12 @@
+[Unit]
+Description=Initialize ACZ7015 USB3320 ULPI host and bind ChipIdea controller
+After=local-fs.target systemd-modules-load.service
+Before=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/acz7015-usb-host-recover
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

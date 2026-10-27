@@ -1,0 +1,39 @@
+{
+  "status": "PASS",
+  "phase": "optimized",
+  "mode": "ceiling_final_points",
+  "bit_sha256": "74ee06b4e08f151b79a6a98472a7055930393c830b0127d5c14a28547e0e9418",
+  "frames": 600,
+  "statistical_frames": 597,
+  "means_ms": {
+    "capture_wait_ms": 16.42154837687467,
+    "processing_ms": 32.10631995309019,
+    "geometry_ms": 2.4658578727090568,
+    "left_ms": 6.791583929649122,
+    "right_ms": 5.902269229483934,
+    "left_hardware_ms": 4.895776023457888,
+    "right_hardware_ms": 4.902665798993407,
+    "snapshot_ms": 0.0,
+    "points_publish_ms": 0.5717683986542788,
+    "active_ms": 32.869456353430174,
+    "cycle_ms": 32.87707826296552
+  },
+  "cycle_p95_ms": 34.39992879984857,
+  "completed_hz": 30.416328117771126,
+  "source_counter_frames": 614,
+  "source_counter_hz": 29.932968525640373,
+  "steady_wall_completed_hz": 29.564176700020315,
+  "pair_counts": {
+    "min": 0,
+    "max": 2
+  },
+  "frame_errors": 0,
+  "cpu_percent_one_core": 55.691087454468274,
+  "async_points_dropped": 0,
+  "async_points_written": 600,
+  "async_previews_written": 0,
+  "async_previews_dropped": 0,
+  "snapshot_count": 0,
+  "snapshot_fps_limit": 0,
+  "note": "Statistics exclude first three cycles. Complete cycle includes capture wait, publication and no rate ceiling; performance JSON writing excluded."
+}

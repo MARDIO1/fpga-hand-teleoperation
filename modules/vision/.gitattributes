@@ -1,0 +1,15 @@
+# Preserve exact board/source bytes, including original CRLF endings.
+vivado/compact_xyz/** -text whitespace=cr-at-eol
+export/bitstream/acz7015/compact-xyz-v0.1.0/** -text whitespace=cr-at-eol
+data/samples/compact_xyz/** -text whitespace=cr-at-eol
+# Keep tool reports byte-identical to the published build evidence.
+export/bitstream/acz7015/compact-xyz-v0.1.0/*.rpt -whitespace
+export/ip/compact-xyz-v0.1.0/** -text whitespace=cr-at-eol
+
+# Preserve frozen optimized release source, IP and board evidence bytes.
+vivado/optimized_xyz/** -text whitespace=cr-at-eol
+hls/optimized_xyz/** -text whitespace=cr-at-eol
+export/ip/optimized-xyz-v0.2.0/** -text whitespace=cr-at-eol
+export/bitstream/acz7015/optimized-xyz-v0.2.0/** -text whitespace=cr-at-eol
+export/bitstream/acz7015/optimized-xyz-v0.2.0/*.rpt -whitespace
+vivado/optimized_xyz/vendor/** -whitespace

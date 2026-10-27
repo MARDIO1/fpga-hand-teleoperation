@@ -27,3 +27,9 @@ Each module owns its sources, simulation, data, Vivado test project and exported
 The repository starts with the validated floating-point fusion core, its independent ACZ7015 overlay, the PS UDP bridge and the MuJoCo virtual-hand simulator. Vision and strain owners can migrate only the parts they want into their clean module areas.
 
 The [MPU6050 prototype](modules/imu/README.md) adds a standalone six-axis/raw-plus-attitude stream. It remains separate from vision, strain and fusion; its measured throughput and known calibration/display interruptions are recorded in the module status document.
+
+## Current vision standalone result
+
+[Vision compact XYZ v0.1.0](modules/vision/vivado/compact_xyz/README.md) is the
+selected 2026-10-26 board release for stereo color recognition and experimental
+distance/XYZ reconstruction. It does not change the shared contracts or fusion integration.

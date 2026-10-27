@@ -1,0 +1,8 @@
+{
+  "min_width_px": 8,
+  "min_height_px": 8,
+  "max_width_px": 70,
+  "max_height_px": 70,
+  "max_aspect_ratio": 2,
+  "center": "area_centroid"
+}

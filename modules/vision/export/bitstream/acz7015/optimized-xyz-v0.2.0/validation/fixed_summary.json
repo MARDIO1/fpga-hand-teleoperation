@@ -1,0 +1,252 @@
+{
+  "phase": "optimized",
+  "bit_sha256": "74ee06b4e08f151b79a6a98472a7055930393c830b0127d5c14a28547e0e9418",
+  "tests": [
+    {
+      "fixture": "glove_replay.rgb565",
+      "fixture_sha256": "6f0cb6da28695367f632c76102e0d0e58078df66a4707c20264268236cae0ed7",
+      "candidates": {
+        "L": 12,
+        "R": 9
+      },
+      "selected": {
+        "L": 10,
+        "R": 5
+      },
+      "pairs": 5,
+      "samples": [
+        {
+          "processing_ms": 18.19052699999446,
+          "geometry_ms": 4.532127000004493,
+          "left_ms": 7.026017999997691,
+          "right_ms": 6.4613820000047895,
+          "left_hardware_ms": 4.830335999997715,
+          "right_hardware_ms": 4.895124000000806
+        },
+        {
+          "processing_ms": 17.945021999999256,
+          "geometry_ms": 4.492835999997169,
+          "left_ms": 6.853632000002108,
+          "right_ms": 6.434382000001904,
+          "left_hardware_ms": 4.91615100000331,
+          "right_hardware_ms": 4.881659999995236
+        },
+        {
+          "processing_ms": 17.931167999996944,
+          "geometry_ms": 4.428179999997894,
+          "left_ms": 6.852618000003474,
+          "right_ms": 6.487227000000928,
+          "left_hardware_ms": 4.926081000000693,
+          "right_hardware_ms": 4.892279999999971
+        },
+        {
+          "processing_ms": 17.901263999995365,
+          "geometry_ms": 4.406979000002309,
+          "left_ms": 6.879884999996477,
+          "right_ms": 6.4508490000037,
+          "left_hardware_ms": 4.945724999998902,
+          "right_hardware_ms": 4.902020999999479
+        },
+        {
+          "processing_ms": 17.912472999995543,
+          "geometry_ms": 4.420619999997655,
+          "left_ms": 6.830536000002496,
+          "right_ms": 6.497717999998542,
+          "left_hardware_ms": 4.906240000003947,
+          "right_hardware_ms": 4.9312349999937055
+        },
+        {
+          "processing_ms": 17.943401999993114,
+          "geometry_ms": 4.449069000003192,
+          "left_ms": 6.8669369999980745,
+          "right_ms": 6.4623569999966435,
+          "left_hardware_ms": 4.90049700000128,
+          "right_hardware_ms": 4.906029000004253
+        },
+        {
+          "processing_ms": 17.921268999998574,
+          "geometry_ms": 4.462421999996025,
+          "left_ms": 6.8449019999974325,
+          "right_ms": 6.450903999997593,
+          "left_hardware_ms": 4.9211579999948185,
+          "right_hardware_ms": 4.891426000000365
+        },
+        {
+          "processing_ms": 17.96893799999566,
+          "geometry_ms": 4.4148449999994455,
+          "left_ms": 6.869289000000833,
+          "right_ms": 6.520524000002581,
+          "left_hardware_ms": 4.934091000002638,
+          "right_hardware_ms": 4.905141000001834
+        },
+        {
+          "processing_ms": 17.917536000005896,
+          "geometry_ms": 4.4221859999993285,
+          "left_ms": 6.874578000001463,
+          "right_ms": 6.45524699999811,
+          "left_hardware_ms": 4.946436000004439,
+          "right_hardware_ms": 4.898183999998196
+        },
+        {
+          "processing_ms": 17.912121000001946,
+          "geometry_ms": 4.411019999999155,
+          "left_ms": 6.846302999996112,
+          "right_ms": 6.491520000004414,
+          "left_hardware_ms": 4.91236799999939,
+          "right_hardware_ms": 4.936355999994646
+        },
+        {
+          "processing_ms": 17.937857999996254,
+          "geometry_ms": 4.428777000001105,
+          "left_ms": 6.8442809999993415,
+          "right_ms": 6.501878999998212,
+          "left_hardware_ms": 4.910741999999857,
+          "right_hardware_ms": 4.888788000002364
+        },
+        {
+          "processing_ms": 17.94660699999895,
+          "geometry_ms": 4.443741000002888,
+          "left_ms": 6.877447000000814,
+          "right_ms": 6.464265000005298,
+          "left_hardware_ms": 4.908960999998158,
+          "right_hardware_ms": 4.903188000000114
+        },
+        {
+          "processing_ms": 17.918018999999674,
+          "geometry_ms": 4.411490999999046,
+          "left_ms": 6.84748199999774,
+          "right_ms": 6.45719999999983,
+          "left_hardware_ms": 4.914677999998673,
+          "right_hardware_ms": 4.896750000000338
+        },
+        {
+          "processing_ms": 17.87868099999912,
+          "geometry_ms": 4.403829000004578,
+          "left_ms": 6.844944000000908,
+          "right_ms": 6.4688949999975875,
+          "left_hardware_ms": 4.912292999996737,
+          "right_hardware_ms": 4.911481000000606
+        },
+        {
+          "processing_ms": 17.87890199999964,
+          "geometry_ms": 4.417580999998449,
+          "left_ms": 6.835758000001135,
+          "right_ms": 6.463623000001917,
+          "left_hardware_ms": 4.905797999995798,
+          "right_hardware_ms": 4.901162999999542
+        },
+        {
+          "processing_ms": 17.91310899999843,
+          "geometry_ms": 4.441872999997543,
+          "left_ms": 6.838035000001241,
+          "right_ms": 6.470522999997286,
+          "left_hardware_ms": 4.9069169999995665,
+          "right_hardware_ms": 4.91489699999903
+        }
+      ],
+      "means_ms": {
+        "processing_ms": 17.93855599999805,
+        "geometry_ms": 4.436723500000017,
+        "left_ms": 6.864540312499834,
+        "right_ms": 6.471155937500583,
+        "left_hardware_ms": 4.912404499999745,
+        "right_hardware_ms": 4.903482687499405
+      }
+    },
+    {
+      "fixture": "pose_00.rgb565",
+      "fixture_sha256": "6b3ae018b44b792730f9c5355ffd2a3f2ec485ba0a3e8a50d93a8ef990b8a199",
+      "candidates": {
+        "L": 22,
+        "R": 16
+      },
+      "selected": {
+        "L": 15,
+        "R": 12
+      },
+      "pairs": 8,
+      "samples": [
+        {
+          "processing_ms": 21.39903599999826,
+          "geometry_ms": 5.841345000000331,
+          "left_ms": 8.068106999999713,
+          "right_ms": 7.307109000002754,
+          "left_hardware_ms": 4.949282999994864,
+          "right_hardware_ms": 4.920857999998418
+        }
+      ],
+      "means_ms": {
+        "processing_ms": 21.39903599999826,
+        "geometry_ms": 5.841345000000331,
+        "left_ms": 8.068106999999713,
+        "right_ms": 7.307109000002754,
+        "left_hardware_ms": 4.949282999994864,
+        "right_hardware_ms": 4.920857999998418
+      }
+    },
+    {
+      "fixture": "pose_07.rgb565",
+      "fixture_sha256": "117f819c78c0e95a3877fe0a3bd4ea3c01d94bfb5fd8efc794e5d137fe84c8bc",
+      "candidates": {
+        "L": 21,
+        "R": 18
+      },
+      "selected": {
+        "L": 15,
+        "R": 13
+      },
+      "pairs": 7,
+      "samples": [
+        {
+          "processing_ms": 21.388749999999845,
+          "geometry_ms": 5.771369999997944,
+          "left_ms": 7.923180000005914,
+          "right_ms": 7.5145930000033445,
+          "left_hardware_ms": 4.9246230000008495,
+          "right_hardware_ms": 4.90901499999552
+        }
+      ],
+      "means_ms": {
+        "processing_ms": 21.388749999999845,
+        "geometry_ms": 5.771369999997944,
+        "left_ms": 7.923180000005914,
+        "right_ms": 7.5145930000033445,
+        "left_hardware_ms": 4.9246230000008495,
+        "right_hardware_ms": 4.90901499999552
+      }
+    },
+    {
+      "fixture": "pose_14.rgb565",
+      "fixture_sha256": "067d658e3f2991af4d8aee37da9b73421f484eb1e435f8a023665a5542c6c698",
+      "candidates": {
+        "L": 24,
+        "R": 21
+      },
+      "selected": {
+        "L": 16,
+        "R": 18
+      },
+      "pairs": 9,
+      "samples": [
+        {
+          "processing_ms": 23.034932999998148,
+          "geometry_ms": 6.730895999993436,
+          "left_ms": 8.26012800000342,
+          "right_ms": 7.862583000004975,
+          "left_hardware_ms": 4.926003000001344,
+          "right_hardware_ms": 4.914228000004073
+        }
+      ],
+      "means_ms": {
+        "processing_ms": 23.034932999998148,
+        "geometry_ms": 6.730895999993436,
+        "left_ms": 8.26012800000342,
+        "right_ms": 7.862583000004975,
+        "left_hardware_ms": 4.926003000001344,
+        "right_hardware_ms": 4.914228000004073
+      }
+    }
+  ],
+  "status": "PASS",
+  "note": "Fixed-image processing time, excludes capture and publication."
+}

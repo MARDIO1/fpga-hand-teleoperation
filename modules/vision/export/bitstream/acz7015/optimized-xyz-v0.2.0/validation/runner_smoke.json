@@ -1,0 +1,16 @@
+{
+  "status": "PASS",
+  "frames": 60,
+  "last_sequence": 59,
+  "preview_sequence": 46,
+  "performance": {
+    "frames": 30,
+    "cycle_mean_ms": 34.44774536666652,
+    "cycle_p95_ms": 34.915062899995064,
+    "completed_hz": 29.029476076180405,
+    "points_published": 59,
+    "points_dropped": 0,
+    "previews_published": 4,
+    "previews_dropped": 0
+  }
+}
