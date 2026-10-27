@@ -1,10 +1,15 @@
 """Color-only component candidates; labels and centroids are frame-local."""
 
 import json
+import numbers
 from pathlib import Path
 
 import cv2
 import numpy as np
+
+
+def _is_int_like(value):
+    return isinstance(value, numbers.Integral) and not isinstance(value, (bool, np.bool_))
 
 
 COLORS = {"red": (60, 60, 255), "yellow": (0, 255, 255),
@@ -19,9 +24,11 @@ def validate_colors(thresholds):
         limits = dict(h_min=179, h_max=179, s_min=255, v_min=255)
         if not isinstance(bounds, dict) or set(bounds) != set(limits):
             raise ValueError(f"{name} needs h_min, h_max, s_min, v_min")
-        if any(type(bounds[key]) is not int or not 0 <= bounds[key] <= limit
-               for key, limit in limits.items()):
-            raise ValueError(f"Invalid HSV bounds for {name}")
+        for key, limit in limits.items():
+            value = bounds[key]
+            if not _is_int_like(value) or not 0 <= int(value) <= limit:
+                raise ValueError(f"Invalid HSV bounds for {name}")
+            bounds[key] = int(value)
 
 
 def load_thresholds(path=DEFAULT_THRESHOLDS):
@@ -30,9 +37,11 @@ def load_thresholds(path=DEFAULT_THRESHOLDS):
         raise ValueError("Threshold file needs L, R, min_area, max_area")
     for eye in ("L", "R"):
         validate_colors(config[eye])
-    if (type(config["min_area"]) is not int or type(config["max_area"]) is not int
-            or not 0 < config["min_area"] <= config["max_area"]):
+    if (not _is_int_like(config["min_area"]) or not _is_int_like(config["max_area"])
+            or not 0 < int(config["min_area"]) <= int(config["max_area"])):
         raise ValueError("Invalid component area limits")
+    config["min_area"] = int(config["min_area"])
+    config["max_area"] = int(config["max_area"])
     return config
 
 
