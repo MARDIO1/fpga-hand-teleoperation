@@ -19,6 +19,10 @@ __pycache__/
 **/vivado/project/
 **/vivado/output/
 **/vivado/reports/
+.vivado/
+integration/vivado/full_project/
+integration/vivado/full_output/
+integration/vivado/full_reports/
 *.jou
 *.log
 *.str

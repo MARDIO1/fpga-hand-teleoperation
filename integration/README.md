@@ -1,12 +1,35 @@
 # Board integration
 
-This area owns the only combined ACZ7015 design. It will connect the vision, strain and fusion packaged IP, perform timestamp alignment and expose PS configuration/status plus UDP debugging.
+This area owns the combined ACZ7015 designs. `create_project.tcl` retains the
+validated first-board IMU + hand-core image. `create_full_project.tcl` adds the
+optimized stereo capture/marker/XYZ pipeline to the same top-level image; it does
+not join prebuilt module bitstreams.
 
 `modules/imu` supplies the independently tested MPU6050 IP. The current combined
 bitstream exposes it at `0x43C10000` and `hand_core` at `0x43C00000`. Attitude
 estimation and the hand-core call still run through PS software.
 
-Module test bitstreams are never nested or linked here. The final Vivado build consumes module IP and emits its own `.bit`, `.hwh` and `.xsa` under `export/bitstream/`.
+Module test bitstreams are never nested or linked here. The final Vivado build
+consumes module IP and emits its own `.bit`, `.hwh` and `.xsa` under
+`integration/vivado/full_output/`.
+
+Prepare the frozen stereo IP, then create or build the full project:
+
+```powershell
+python modules\vision\vivado\optimized_xyz\prepare_release.py
+vivado -mode batch -source integration\vivado\create_full_project.tcl
+vivado -mode batch -source integration\vivado\create_full_project.tcl -tclargs build
+```
+
+Generated work stays in ignored `.vivado/full_board`,
+`integration/vivado/full_output`, and `integration/vivado/full_reports`
+directories. The short work path avoids Windows' 260-character limit inside the
+floating-point geometry IP. The full address map preserves the
+standalone module addresses: `hand_core` at `0x43C00000`, MPU6050 at
+`0x43C10000`, and the stereo blocks at their optimized-v0.2.0 addresses. The
+full image also exposes the raw camera 1/2 VSYNC counters through a dual AXI
+GPIO at `0x41210000`; this small persistent diagnostic distinguishes a stopped
+sensor from a downstream stereo or VDMA stall.
 
 ## First-board bring-up
 
@@ -18,23 +41,37 @@ sudo python3 integration/software/ps/smoke_board.py
 ```
 
 Use `--reuse-overlay` for later checks so restarting software does not reconfigure
-PL. Then record the repeatable three-pose strain calibration:
+PL. The three sensor classes are calibrated separately.
+
+1. Strain: record the repeatable open / half-bent / closed poses:
 
 ```bash
 python3 modules/strain/software/ps/calibrate_strain.py --channels 2
 ```
 
-The F103 performs IMU filtering. To request manual gyro calibration, keep the
-sensor stationary and start the streamer with `--calibrate-imu`:
+2. IMU: calibration runs on the F103 only when explicitly requested. Keep the
+glove still and run the streamer once with `--calibrate-imu`; later starts reuse
+that state while the F103 remains powered and do not initiate calibration automatically.
 
-```bash
-sudo python3 integration/software/ps/board_stream.py --calibrate-imu
-```
+3. Vision: temporarily place one yellow ball at the defined wrist centre. Start
+in the standard pose, then slowly turn the wrist so both cuff faces pass through
+the stereo view. Each usable frame transforms its visible cuff balls back to the
+local wrist frame using the simultaneous IMU attitude and yellow centre. Samples
+are clustered into the complete ring template (red 1, green 1, blue 5), so all
+seven balls do not need to be visible in one frame. Remove the yellow ball after
+writing `wrist_ring_calibration.json`. This capture needs live stereo data; do not
+substitute guessed marker offsets.
 
-Later starts do not initiate calibration automatically:
+Then start the SSH-run streamer:
 
 ```bash
 sudo python3 integration/software/ps/board_stream.py
+```
+
+To request manual F103 gyro calibration, keep the sensor stationary and run:
+
+```bash
+sudo python3 integration/software/ps/board_stream.py --calibrate-imu
 ```
 
 If no calibration file exists, the default `auto` mode enters an explicit preview:
@@ -46,6 +83,29 @@ The PS reads the 46-byte `IMUQ` stream from `/dev/ttyUSB0`, checks its CRC and
 status, maps the calibrated bend channels, and forwards the F103 quaternion in
 `HAND v2` to `192.168.137.1:47000` at 100 Hz. It does not run a second attitude
 filter. Streaming starts after the MCU reports present, valid, and calibrated.
+
+For the full image, run the optimized stereo publisher first. It atomically writes
+`/dev/shm/marker_results_v2/latest.json`. The hand streamer consumes its newest
+valid sample without blocking the 100 Hz IMU/strain loop. A calibrated seven-point
+wrist-ring model is mandatory; raw marker centroids are not wrist positions:
+
+```bash
+sudo python3 integration/software/ps/board_stream.py \
+  --vision-json /dev/shm/marker_results_v2/latest.json \
+  --wrist-calibration modules/vision/data/wrist_ring_calibration.json
+```
+
+The model stores every ball's colour and sensor-frame offset from the wrist
+centre. IMU orientation reduces each frame to a small colour-compatible assignment
+problem; repeated blue balls are selected by geometric residual and temporal
+continuity. Two or more visible balls are sufficient, a uniquely identified
+single ball may continue tracking, and an unresolved lone blue ball is rejected.
+A sample older than `--vision-max-age` is invalid and the last position is held.
+Camera frames remain asynchronous (about 20--30 Hz); HAND packets use the newest
+absolute optical-frame wrist position and the current IMU timestamp. MANO and
+robot displays may establish their own initial origin. This software path requires
+the full bitstream: loading the standalone stereo bitstream would remove MPU6050
+and `hand_core` from PL.
 
 ## Current hardware status
 

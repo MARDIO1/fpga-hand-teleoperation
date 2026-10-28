@@ -18,6 +18,9 @@ PORT = 47000
 SENSOR_PACKET = struct.Struct("<IHHIIBBBB13f5HH")
 PALM_DOWN_QUATERNION = np.array((2**-0.5, 2**-0.5, 0.0, 0.0))
 IMU_TO_HAND_QUATERNION = np.array((0.0, 2**-0.5, 2**-0.5, 0.0))
+CAMERA_TO_DISPLAY = np.array(((1.0, 0.0, 0.0),
+                              (0.0, 0.0, 1.0),
+                              (0.0, -1.0, 0.0)))
 
 
 @dataclass(slots=True)
@@ -107,20 +110,27 @@ class FirstBoardMapper:
 
     def __init__(self) -> None:
         self.reference_quaternion: np.ndarray | None = None
+        self.camera_reference: np.ndarray | None = None
         self.quaternion = PALM_DOWN_QUATERNION.copy()
-        self.position = np.array((0.0, 0.0, 0.31))
+        self.position_origin = np.array((0.0, 0.0, 0.31))
+        self.position = self.position_origin.copy()
 
     def reset_orientation(self) -> None:
         self.reference_quaternion = None
+        self.camera_reference = None
 
     def update(self, frame: ReceivedFrame) -> HandFrame:
         bends = np.clip(frame.sensor.flex_raw.astype(float) / 4095.0, 0.0, 1.0)
 
-        if frame.sensor.camera_valid:
-            self.position = np.asarray(frame.sensor.wrist_xyz, dtype=float).copy()
-
         if frame.reset:
             self.reset_orientation()
+        if frame.sensor.camera_valid:
+            absolute = np.asarray(frame.sensor.wrist_xyz, dtype=float)
+            if self.camera_reference is None:
+                self.camera_reference = absolute.copy()
+            self.position = self.position_origin + CAMERA_TO_DISPLAY @ (
+                absolute-self.camera_reference)
+
         if frame.imu_valid:
             quaternion = np.asarray(frame.sensor.wrist_quaternion_wxyz, dtype=float)
             norm = float(np.linalg.norm(quaternion))

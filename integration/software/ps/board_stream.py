@@ -12,6 +12,8 @@ ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "modules" / "strain" / "software" / "ps"))
 
 from strain_uart import Calibration, PreviewCalibration, StrainSerial
+from vision_latest import LatestVision
+from wrist_ring import RingCalibration, WristRingTracker
 
 
 HAND = struct.Struct("<IHHIIBBBB13f5HH")
@@ -21,9 +23,9 @@ DEFAULT_CALIBRATION = ROOT / "modules" / "strain" / "data" / "strain_calibration
 
 def packet(sequence, timestamp_us, quaternion, bend, position,
            acceleration=(0.0, 0.0, 0.0), angular_velocity=(0.0, 0.0, 0.0),
-           reset=False):
+           reset=False, camera_valid=False):
     return HAND.pack(MAGIC, 2, 1, sequence, timestamp_us & 0xffffffff,
-                     int(reset), 0, 1, 0,
+                     int(reset), int(camera_valid), 1, 0,
                      position[0], position[1], position[2],
                      quaternion[0], quaternion[1], quaternion[2], quaternion[3],
                      acceleration[0], acceleration[1], acceleration[2],
@@ -63,18 +65,32 @@ def main():
     parser.add_argument("--bend-alpha", type=float, default=0.25)
     parser.add_argument("--bend-deadband", type=float, default=16.0)
     parser.add_argument("--position", type=float, nargs=3, default=(0.0, 0.0, 0.31))
+    parser.add_argument("--vision-json", type=Path,
+                        help="optimized stereo latest.json; omitted disables camera input")
+    parser.add_argument("--wrist-calibration", type=Path,
+                        help="calibrated marker-ring geometry; required with --vision-json")
+    parser.add_argument("--vision-max-age", type=float, default=0.2)
     parser.add_argument("--seconds", type=float, default=0.0,
                         help="run duration; zero means until interrupted")
     args = parser.parse_args()
     if (args.rate <= 0 or args.preview_span <= 0 or args.seconds < 0
-            or not 0 < args.bend_alpha <= 1 or args.bend_deadband < 0):
+            or not 0 < args.bend_alpha <= 1 or args.bend_deadband < 0
+            or args.vision_max_age <= 0):
         parser.error("rates and spans must be positive; seconds must be nonnegative")
+    if bool(args.vision_json) != bool(args.wrist_calibration):
+        parser.error("--vision-json and --wrist-calibration must be used together")
+
     if args.strain_mode == "calibrated" or (args.strain_mode == "auto" and args.calibration.exists()):
         calibration = Calibration.load(args.calibration)
         strain_mode = "calibrated"
     else:
         calibration = PreviewCalibration(span=args.preview_span)
         strain_mode = "preview"
+    vision = LatestVision(args.vision_json, args.vision_max_age) if args.vision_json else None
+    wrist = (WristRingTracker(RingCalibration.load(args.wrist_calibration))
+             if args.wrist_calibration else None)
+    camera_position = tuple(args.position)
+    camera_sequence = None
     destination = (args.host, args.port)
     udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     latest_strain = None
@@ -104,6 +120,15 @@ def main():
                 pose = pose_from_frame(latest_strain) if latest_strain is not None else None
 
                 now = time.monotonic()
+                camera_valid = False
+                if vision is not None:
+                    camera = vision.poll(now)
+                    if camera is not None and pose is not None:
+                        estimate = wrist.update(camera.markers, pose["quaternion_wxyz"])
+                        if estimate is not None:
+                            camera_position = estimate.xyz_camera_m
+                            camera_valid = True
+                        camera_sequence = camera.sequence
                 if now - last_strain_time > 0.5:
                     raise RuntimeError("No fresh strain frame for 0.5 s")
                 if pose is not None and latest_strain is not None and now >= next_send:
@@ -113,9 +138,10 @@ def main():
                     bend = tuple(int(round(value)) for value in filtered_bend)
                     udp.sendto(packet(sequence, pose["timestamp_us"],
                                       pose["quaternion_wxyz"], bend,
-                                      args.position, pose["acceleration_g"],
+                                      camera_position, pose["acceleration_g"],
                                       pose["angular_velocity_rad_s"],
-                                      sequence == 0), destination)
+                                      reset=sequence == 0,
+                                      camera_valid=camera_valid), destination)
                     sequence = (sequence + 1) & 0xffffffff
                     sent += 1
                     next_send += 1.0 / args.rate
@@ -123,10 +149,11 @@ def main():
                         next_send = now
 
                 if now - last_report >= 1.0:
-                    print("sent={} imu_seq={} status=0x{:02x} uart_rejected={}".format(
+                    print("sent={} imu_seq={} status=0x{:02x} camera_seq={} uart_rejected={}".format(
                         sent,
                         latest_strain.sequence if latest_strain else None,
                         latest_strain.status if latest_strain else 0,
+                        camera_sequence,
                         strain.decoder.rejected), file=sys.stderr)
                     last_report = now
                 if args.seconds and now - started >= args.seconds:

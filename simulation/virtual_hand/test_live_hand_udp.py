@@ -55,15 +55,23 @@ class LiveHandUdpTest(unittest.TestCase):
         ))
         np.testing.assert_allclose(hand.wrist_quaternion_wxyz, expected, atol=1e-6)
 
-    def test_all_bends_and_camera_position(self):
-        payload = SENSOR_PACKET.pack(
+    def test_all_bends_and_absolute_camera_position(self):
+        first_payload = SENSOR_PACKET.pack(
             MAGIC, VERSION, SENSOR, 0, 0, 1, 1, 1, 0,
             0.1, 0.2, 0.3, 1.0, 0.0, 0.0, 0.0,
             0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
             0, 1024, 2048, 3071, 4095, 0,
         )
-        hand = FirstBoardMapper().update(decode_packet(payload))
-        np.testing.assert_allclose(hand.wrist_xyz, (0.1, 0.2, 0.3))
+        second_payload = SENSOR_PACKET.pack(
+            MAGIC, VERSION, SENSOR, 1, 1, 0, 1, 1, 0,
+            0.12, 0.15, 0.4, 1.0, 0.0, 0.0, 0.0,
+            0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+            0, 1024, 2048, 3071, 4095, 0,
+        )
+        mapper = FirstBoardMapper()
+        mapper.update(decode_packet(first_payload))
+        hand = mapper.update(decode_packet(second_payload))
+        np.testing.assert_allclose(hand.wrist_xyz, (0.02, 0.1, 0.36), atol=1e-7)
         np.testing.assert_allclose(hand.bend, np.asarray((0, 1024, 2048, 3071, 4095)) / 4095)
 
     def test_bad_packet_is_rejected(self):
