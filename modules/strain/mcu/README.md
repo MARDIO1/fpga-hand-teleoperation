@@ -1,46 +1,49 @@
-# STM32 strain acquisition node (ADC + UART)
+# STM32 IMU and strain acquisition node
 
-STM32F103C8T6 firmware for analog voltage acquisition and serial readout, used as the
-MCU-side acquisition path for the strain module.
+STM32F103C8T6 firmware reads an MPU6050 and analog strain channels, runs the
+quaternion EKF, and sends one CRC-protected UART frame to the Zynq PS at 100 Hz.
 
-- MCU: STM32F103C8T6, 72 MHz (HSE + PLL x9)
-- ADC: ADC1_IN2 on PA2, 12-bit, 239.5-cycle sampling time, polling mode (HAL)
-- UART: USART1, PA9 (TX) / PA10 (RX), 115200-8-N-1
-- IDE: Keil MDK-ARM (ArmCC V5.06, C99, MicroLIB)
+The primary firmware is the CubeMX/HAL project in `CubeMX/`. The older
+Keil-only ADC bring-up remains in this directory for reference.
 
-## Wiring
+## Current CubeMX wiring
 
-| STM32F103C8T6 | Connect to |
+| STM32F103C8T6 | Function |
 | --- | --- |
-| PA2 (ADC1_IN2) | Analog input, 0 .. 3.3 V |
-| PA9 (USART1_TX) | USB-TTL RX |
-| PA10 (USART1_RX) | USB-TTL TX |
-| GND | USB-TTL GND (common ground) |
+| PB6 | MPU6050 SCL |
+| PB7 | MPU6050 SDA |
+| PB5 | MPU6050 INT |
+| PA2 | ADC1_IN2, 0 to 3.3 V |
+| PA9 | USART1 TX to USB-TTL/Zynq RX |
+| PA10 | USART1 RX from USB-TTL/Zynq TX |
+| GND | Common ground |
 
-Do not exceed 3.3 V on the ADC input.
+Do not exceed 3.3 V on an ADC input.
 
 ## Build and flash
 
-1. Open `Projects/MDK-ARM/START0.uvprojx` in Keil MDK.
-2. Rebuild the project.
-3. Download to the board.
+Open `CubeMX/MDK-ARM/strain_f103.uvprojx` in Keil MDK, rebuild, and download
+through ST-LINK. CubeMX owns peripheral initialization; application code is
+kept in the generated user-code sections and BSP directories.
 
-## Output
+## UART output
 
-The firmware sends the fixed 28-byte `STRN` frame from
-[`contracts/strain_uart.md`](../../../contracts/strain_uart.md) at 100 Hz. The
-current one-sensor bring-up writes PA2 into the middle-finger slot and leaves the
-other four channels at zero. The MCU sends raw ADC values only; calibration and
-bend mapping run on the Zynq PS.
+USART1 uses 115200-8-N-1 and sends the fixed 46-byte `IMUQ` v1 frame defined
+in [`contracts/strain_uart.md`](../../../contracts/strain_uart.md). Each frame
+contains status, sequence and timestamp, quaternion `[w,x,y,z]`, five raw ADC
+slots, raw MPU temperature, and CRC-16/CCITT-FALSE.
+
+The current one-sensor build puts PA2 in ADC slot 0 and writes `0xffff` to the
+other four slots. Send ASCII `C` or `c` to start manual gyro calibration; keep
+the board stationary until the calibrating flag clears and calibrated flag is
+set.
 
 ## Layout
 
-- `Drivers/BSP/adc.dma/` - ADC driver (`adc_init`, `HAL_ADC_MspInit`)
-- `Drivers/SYSTEM/` - clock, delay and USART1 helpers
-- `Users/main.c` - initialization and the sampling/print loop
-- `Projects/MDK-ARM/` - Keil project
+- `CubeMX/` - current STM32CubeMX/HAL project
+- `Drivers/BSP/imu_filter/` - quaternion EKF implementation
+- `tests/` - host-side checks for the filter and protocol
+- `Drivers/`, `Users/`, `Projects/` - retained older Keil ADC bring-up
 
-## Notes
-
-On the current test board PA1 (ADC1_IN1) was measured as externally pulled to ground,
-so this firmware samples PA2 (ADC1_IN2) instead.
+PA1 was measured as externally pulled to ground on the current test board, so
+the current firmware samples PA2 instead.

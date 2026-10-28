@@ -1,4 +1,4 @@
-"""Decode STRN v1 UART frames and apply a three-pose bend calibration."""
+"""Decode IMUQ v1 UART frames and apply a three-pose bend calibration."""
 
 import json
 import os
@@ -13,9 +13,9 @@ except ImportError:
     termios = None
 
 
-MAGIC = b"STRN"
+MAGIC = b"IMUQ"
 VERSION = 1
-FRAME = struct.Struct("<4sBBHII5HH")
+FRAME = struct.Struct("<4sBBHII4f5HhH")
 
 
 def crc16_ccitt(data):
@@ -28,10 +28,30 @@ def crc16_ccitt(data):
 
 
 class StrainFrame:
-    def __init__(self, sequence, timestamp_us, raw):
+    def __init__(self, sequence, timestamp_us, status, quaternion_wxyz, raw,
+                 temperature_raw):
         self.sequence = sequence
         self.timestamp_us = timestamp_us
+        self.status = status
+        self.quaternion_wxyz = tuple(quaternion_wxyz)
         self.raw = tuple(raw)
+        self.temperature_raw = temperature_raw
+
+    @property
+    def mpu_present(self):
+        return bool(self.status & (1 << 0))
+
+    @property
+    def sample_valid(self):
+        return bool(self.status & (1 << 1))
+
+    @property
+    def calibrating(self):
+        return bool(self.status & (1 << 2))
+
+    @property
+    def calibrated(self):
+        return bool(self.status & (1 << 3))
 
 
 class Decoder:
@@ -58,7 +78,8 @@ class Decoder:
                 self.rejected += 1
                 del self.buffer[0]
                 continue
-            frames.append(StrainFrame(values[4], values[5], values[6:11]))
+            frames.append(StrainFrame(values[4], values[5], values[2],
+                                      values[6:10], values[10:15], values[15]))
             del self.buffer[:FRAME.size]
         return frames
 
@@ -67,7 +88,7 @@ class StrainSerial:
     def __init__(self, device="/dev/ttyUSB0"):
         if termios is None:
             raise RuntimeError("StrainSerial requires Linux termios")
-        self.fd = os.open(device, os.O_RDONLY | os.O_NOCTTY | os.O_NONBLOCK)
+        self.fd = os.open(device, os.O_RDWR | os.O_NOCTTY | os.O_NONBLOCK)
         settings = termios.tcgetattr(self.fd)
         settings[0] = 0
         settings[1] = 0
@@ -100,7 +121,13 @@ class StrainSerial:
             frames = self.poll(max(0.0, deadline - time.monotonic()))
             if frames:
                 return frames[-1]
-        raise RuntimeError("No valid STRN frame from UART")
+        raise RuntimeError("No valid IMUQ frame from UART")
+
+    def start_calibration(self):
+        if self.fd is None:
+            raise RuntimeError("UART is closed")
+        if os.write(self.fd, b"C") != 1:
+            raise RuntimeError("Failed to send IMU calibration command")
 
     def __enter__(self):
         return self

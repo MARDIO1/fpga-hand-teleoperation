@@ -1,24 +1,45 @@
-# F103 strain UART v1
+# F103 IMU and strain UART v1
 
-Minimal fixed-size transport from the F103 to the Zynq PS.
+Fixed-size transport from the STM32F103C8T6 to the Zynq PS.
 
 - UART: `115200 8N1`
 - byte order: little-endian
 - rate: `100 Hz`
-- frame size: `28 bytes`
+- frame size: `46 bytes`
+- structure: `<4sBBHII4f5HhH`
 
 | Offset | Type | Field |
 | ---: | --- | --- |
-| 0 | `char[4]` | ASCII `STRN` |
+| 0 | `char[4]` | ASCII `IMUQ` |
 | 4 | `uint8` | version, currently `1` |
-| 5 | `uint8` | flags, currently `0` |
-| 6 | `uint16` | frame size, `28` |
+| 5 | `uint8` | status flags |
+| 6 | `uint16` | frame size, `46` |
 | 8 | `uint32` | sequence |
 | 12 | `uint32` | F103 boot-relative `timestamp_us` |
-| 16 | `uint16[5]` | thumb, index, middle, ring, little raw ADC values |
-| 26 | `uint16` | CRC-16/CCITT-FALSE over bytes 0 through 25 |
+| 16 | `float32[4]` | quaternion in `[w, x, y, z]` order |
+| 32 | `uint16[5]` | raw strain ADC channels |
+| 42 | `int16` | raw MPU6050 temperature |
+| 44 | `uint16` | CRC-16/CCITT-FALSE over bytes 0 through 43 |
+
+Status flags:
+
+| Bit | Meaning |
+| ---: | --- |
+| 0 | MPU6050 present |
+| 1 | current IMU sample valid |
+| 2 | manual gyro calibration in progress |
+| 3 | gyro calibration complete |
+| 4 | UART transmit drop observed |
+| 5 | MPU6050 initialization error |
 
 CRC parameters are polynomial `0x1021`, initial value `0xffff`, no reflection,
 and final XOR `0x0000`. Sequence detects dropped frames. The PS records its own
-monotonic arrival time for camera/IMU alignment; the F103 timestamp is retained
-for sample spacing and diagnostics but is not assumed to share the Zynq clock.
+monotonic arrival time for diagnostics; the MCU timestamp is boot-relative and
+does not share the Zynq clock.
+
+The current one-sensor build puts PA2 in ADC slot 0. Unused ADC slots contain
+`0xffff`, so the receiver must not interpret them as valid measurements.
+
+Calibration is manual. The PS sends one ASCII `C` or `c` byte to start gyro
+calibration. Keep the sensor stationary while status bit 2 is set. Calibration
+has completed when bit 2 clears and bit 3 becomes set.
