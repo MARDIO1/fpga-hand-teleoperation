@@ -24,17 +24,17 @@ PL. Then record the repeatable three-pose strain calibration:
 python3 modules/strain/software/ps/calibrate_strain.py --channels 2
 ```
 
-Then keep the hand still for the first two seconds and start the SSH-run streamer:
+The F103 performs IMU filtering. To request manual gyro calibration, keep the
+sensor stationary and start the streamer with `--calibrate-imu`:
+
+```bash
+sudo python3 integration/software/ps/board_stream.py --calibrate-imu
+```
+
+Later starts do not initiate calibration automatically:
 
 ```bash
 sudo python3 integration/software/ps/board_stream.py
-```
-
-If the combined overlay is already active, do not reconfigure PL again when
-restarting only the streamer:
-
-```bash
-sudo python3 integration/software/ps/board_stream.py --reuse-overlay
 ```
 
 If no calibration file exists, the default `auto` mode enters an explicit preview:
@@ -42,10 +42,10 @@ the first sample is the zero point and the absolute change drives bend over a
 600-count span. Use `--strain-mode calibrated` to require a completed calibration,
 or `--strain-mode preview --preview-span 600` to force the uncalibrated display.
 
-The PS reads `/dev/ttyUSB0`, solves the MPU6050 attitude, maps the calibrated
-middle-finger bend, and sends `HAND v2` to `192.168.137.1:47000` at 100 Hz. Camera
-position is invalid in this first-board version, so the PC display holds its
-default wrist position.
+The PS reads the 46-byte `IMUQ` stream from `/dev/ttyUSB0`, checks its CRC and
+status, maps the calibrated bend channels, and forwards the F103 quaternion in
+`HAND v2` to `192.168.137.1:47000` at 100 Hz. It does not run a second attitude
+filter. Streaming starts after the MCU reports present, valid, and calibrated.
 
 ## Current hardware status
 
