@@ -1,0 +1,3 @@
+config load "T:/Project/9.22 look_grap/fpga-hand-teleoperation/modules/strain/mcu/CubeMX/strain_imu_f103.ioc"
+project generate
+exit
