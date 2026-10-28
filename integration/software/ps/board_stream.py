@@ -1,4 +1,4 @@
-"""Solve the first-board IMU and strain inputs, then send HAND v2 at 100 Hz."""
+"""Receive F103 IMU/strain frames, then send HAND v2 at 100 Hz."""
 
 import argparse
 from pathlib import Path
@@ -9,18 +9,13 @@ import time
 
 
 ROOT = Path(__file__).resolve().parents[3]
-sys.path.insert(0, str(ROOT / "modules" / "imu" / "software" / "ps"))
 sys.path.insert(0, str(ROOT / "modules" / "strain" / "software" / "ps"))
 
-from attitude import Attitude
-from run_mpu6050 import read_sample
 from strain_uart import Calibration, PreviewCalibration, StrainSerial
 
 
 HAND = struct.Struct("<IHHIIBBBB13f5HH")
 MAGIC = 0x444e4148
-DEFAULT_BITSTREAM = (ROOT / "integration" / "export" / "bitstream" / "acz7015" /
-                     "v0.1.0" / "first_board.bit")
 DEFAULT_CALIBRATION = ROOT / "modules" / "strain" / "data" / "strain_calibration.json"
 
 
@@ -43,13 +38,22 @@ def smooth_bend(previous, current, alpha, deadband):
                  for old, value in zip(previous, current))
 
 
+def pose_from_frame(frame):
+    if not (frame.mpu_present and frame.sample_valid and frame.calibrated):
+        return None
+    return {
+        "timestamp_us": frame.timestamp_us,
+        "quaternion_wxyz": frame.quaternion_wxyz,
+        "acceleration_g": (0.0, 0.0, 0.0),
+        "angular_velocity_rad_s": (0.0, 0.0, 0.0),
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--bitstream", type=Path, default=DEFAULT_BITSTREAM)
-    parser.add_argument("--reuse-overlay", action="store_true",
-                        help="use the already-loaded MPU overlay without reconfiguring PL")
-    parser.add_argument("--base", type=lambda value: int(value, 0), default=0x43c10000)
     parser.add_argument("--device", default="/dev/ttyUSB0")
+    parser.add_argument("--calibrate-imu", action="store_true",
+                        help="send one manual gyro-calibration command at startup")
     parser.add_argument("--calibration", type=Path, default=DEFAULT_CALIBRATION)
     parser.add_argument("--strain-mode", choices=("auto", "calibrated", "preview"), default="auto")
     parser.add_argument("--preview-span", type=float, default=600.0)
@@ -59,36 +63,21 @@ def main():
     parser.add_argument("--bend-alpha", type=float, default=0.25)
     parser.add_argument("--bend-deadband", type=float, default=16.0)
     parser.add_argument("--position", type=float, nargs=3, default=(0.0, 0.0, 0.31))
-    parser.add_argument("--calibration-samples", type=int, default=2500)
-    parser.add_argument("--gyro-scale", type=float, nargs=3, default=(1.0, 1.0, 1.0),
-                        metavar=("GX", "GY", "GZ"),
-                        help="per-axis gyro scale; keep 1 1 1 until a measured turn test")
     parser.add_argument("--seconds", type=float, default=0.0,
                         help="run duration; zero means until interrupted")
     args = parser.parse_args()
-    if (args.rate <= 0 or args.preview_span <= 0 or args.calibration_samples < 2
-            or args.seconds < 0 or not 0 < args.bend_alpha <= 1 or args.bend_deadband < 0
-            or not all(value > 0 for value in args.gyro_scale)):
+    if (args.rate <= 0 or args.preview_span <= 0 or args.seconds < 0
+            or not 0 < args.bend_alpha <= 1 or args.bend_deadband < 0):
         parser.error("rates and spans must be positive; seconds must be nonnegative")
-
-    from pynq import MMIO, Overlay
-
-    if not args.reuse_overlay:
-        Overlay(str(args.bitstream.resolve()))
-    mmio = MMIO(args.base, 0x1000)
     if args.strain_mode == "calibrated" or (args.strain_mode == "auto" and args.calibration.exists()):
         calibration = Calibration.load(args.calibration)
         strain_mode = "calibrated"
     else:
         calibration = PreviewCalibration(span=args.preview_span)
         strain_mode = "preview"
-    estimator = Attitude(args.calibration_samples, gyro_scale=args.gyro_scale)
     destination = (args.host, args.port)
     udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     latest_strain = None
-    last_imu = None
-    last_errors = None
-    last_imu_time = time.monotonic()
     sequence = 0
     sent = 0
     filtered_bend = None
@@ -96,12 +85,15 @@ def main():
     last_report = next_send
     started = next_send
 
-    calibration_seconds = args.calibration_samples / 500.0
-    print("strain_mode={}; keep the hand still for {:.1f}-second IMU calibration".format(
-        strain_mode, calibration_seconds), file=sys.stderr)
+    print("strain_mode={}; IMU source=F103 IMUQ UART".format(strain_mode),
+          file=sys.stderr)
     try:
         with StrainSerial(args.device) as strain:
             latest_strain = strain.read_frame(2.0)
+            if args.calibrate_imu:
+                strain.start_calibration()
+                print("IMU calibration requested; keep the sensor stationary",
+                      file=sys.stderr)
             last_strain_time = time.monotonic()
             while True:
                 frames = strain.poll(0.0)
@@ -109,30 +101,11 @@ def main():
                     latest_strain = frames[-1]
                     last_strain_time = time.monotonic()
 
-                sample = read_sample(mmio)
-                if sample is not None and sample.sequence != last_imu:
-                    last_imu = sample.sequence
-                    last_imu_time = time.monotonic()
-                    if last_errors is not None and sample.errors != last_errors:
-                        estimator = Attitude(args.calibration_samples,
-                                             gyro_scale=args.gyro_scale)
-                        print("I2C recovery: restart stationary calibration", file=sys.stderr)
-                    last_errors = sample.errors
-                    try:
-                        pose = estimator.update(sample)
-                    except ValueError as error:
-                        print(str(error), file=sys.stderr)
-                        estimator = Attitude(args.calibration_samples,
-                                             gyro_scale=args.gyro_scale)
-                        pose = estimator.update(sample)
-                else:
-                    pose = None
+                pose = pose_from_frame(latest_strain) if latest_strain is not None else None
 
                 now = time.monotonic()
                 if now - last_strain_time > 0.5:
                     raise RuntimeError("No fresh strain frame for 0.5 s")
-                if now - last_imu_time > 2.0:
-                    raise RuntimeError("No fresh IMU sample for 2 s")
                 if pose is not None and latest_strain is not None and now >= next_send:
                     filtered_bend = smooth_bend(filtered_bend,
                                                 calibration.map(latest_strain.raw),
@@ -150,9 +123,10 @@ def main():
                         next_send = now
 
                 if now - last_report >= 1.0:
-                    print("sent={} imu_seq={} strain_seq={} uart_rejected={}".format(
-                        sent, last_imu,
+                    print("sent={} imu_seq={} status=0x{:02x} uart_rejected={}".format(
+                        sent,
                         latest_strain.sequence if latest_strain else None,
+                        latest_strain.status if latest_strain else 0,
                         strain.decoder.rejected), file=sys.stderr)
                     last_report = now
                 if args.seconds and now - started >= args.seconds:

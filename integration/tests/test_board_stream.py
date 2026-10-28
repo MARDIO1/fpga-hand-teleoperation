@@ -10,12 +10,33 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "integration" / "software" / "ps"))
 sys.path.insert(0, str(ROOT / "simulation" / "virtual_hand"))
 
-from board_stream import HAND, packet, smooth_bend
+from board_stream import HAND, packet, pose_from_frame, smooth_bend
 from live_hand_udp import decode_packet
 from smoke_board import HAND_INPUT, HAND_OUTPUT, run_hand_core
 
 
 class BoardStreamTest(unittest.TestCase):
+    def test_pose_uses_calibrated_imuq_quaternion(self):
+        class Frame:
+            mpu_present = True
+            sample_valid = True
+            calibrated = True
+            timestamp_us = 123456
+            quaternion_wxyz = (0.5, 0.5, 0.5, 0.5)
+
+        pose = pose_from_frame(Frame())
+        self.assertEqual(pose["timestamp_us"], 123456)
+        self.assertEqual(pose["quaternion_wxyz"], (0.5, 0.5, 0.5, 0.5))
+        self.assertEqual(pose["acceleration_g"], (0.0, 0.0, 0.0))
+
+    def test_pose_rejects_uncalibrated_imuq_frame(self):
+        class Frame:
+            mpu_present = True
+            sample_valid = True
+            calibrated = False
+
+        self.assertIsNone(pose_from_frame(Frame()))
+
     def test_packet_matches_pc_decoder(self):
         payload = packet(9, 123456, (1.0, 0.0, 0.0, 0.0),
                          (0, 0, 2048, 0, 0), (0.1, 0.2, 0.3),
