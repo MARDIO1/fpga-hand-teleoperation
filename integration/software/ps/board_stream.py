@@ -11,14 +11,14 @@ import time
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "modules" / "strain" / "software" / "ps"))
 
-from strain_uart import Calibration, PreviewCalibration, StrainSerial
+from strain_uart import Calibration, FingerCalibration, PreviewCalibration, StrainSerial
 from vision_latest import LatestVision
 from wrist_ring import RingCalibration, WristRingTracker
 
 
 HAND = struct.Struct("<IHHIIBBBB13f5HH")
 MAGIC = 0x444e4148
-DEFAULT_CALIBRATION = ROOT / "modules" / "strain" / "data" / "strain_calibration.json"
+DEFAULT_CALIBRATION = ROOT / "modules" / "strain" / "data" / "finger_calibration.json"
 
 
 def packet(sequence, timestamp_us, quaternion, bend, position,
@@ -40,6 +40,18 @@ def smooth_bend(previous, current, alpha, deadband):
                  for old, value in zip(previous, current))
 
 
+def middle_finger_bend(calibration, raw):
+    """Map F103 ADC slot 0 to the middle finger in HAND v2."""
+    mapped = calibration.map(raw)
+    return (0, 0, mapped[0], 0, 0)
+
+
+def finger_bend(calibration, raw):
+    if isinstance(calibration, FingerCalibration):
+        return calibration.map(raw)
+    return middle_finger_bend(calibration, raw)
+
+
 def pose_from_frame(frame):
     if not (frame.mpu_present and frame.sample_valid and frame.calibrated):
         return None
@@ -53,7 +65,7 @@ def pose_from_frame(frame):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--device", default="/dev/ttyUSB0")
+    parser.add_argument("--device", default="/dev/ttyACM0")
     parser.add_argument("--calibrate-imu", action="store_true",
                         help="send one manual gyro-calibration command at startup")
     parser.add_argument("--calibration", type=Path, default=DEFAULT_CALIBRATION)
@@ -82,9 +94,11 @@ def main():
 
     if args.strain_mode == "calibrated" or (args.strain_mode == "auto" and args.calibration.exists()):
         calibration = Calibration.load(args.calibration)
+        if not isinstance(calibration, FingerCalibration) and 0 not in calibration.channels:
+            parser.error("strain calibration must include F103 ADC slot 0 (middle finger)")
         strain_mode = "calibrated"
     else:
-        calibration = PreviewCalibration(span=args.preview_span)
+        calibration = PreviewCalibration(channel=0, span=args.preview_span)
         strain_mode = "preview"
     vision = LatestVision(args.vision_json, args.vision_max_age) if args.vision_json else None
     wrist = (WristRingTracker(RingCalibration.load(args.wrist_calibration))
@@ -133,7 +147,7 @@ def main():
                     raise RuntimeError("No fresh strain frame for 0.5 s")
                 if pose is not None and latest_strain is not None and now >= next_send:
                     filtered_bend = smooth_bend(filtered_bend,
-                                                calibration.map(latest_strain.raw),
+                                                finger_bend(calibration, latest_strain.raw),
                                                 args.bend_alpha, args.bend_deadband)
                     bend = tuple(int(round(value)) for value in filtered_bend)
                     udp.sendto(packet(sequence, pose["timestamp_us"],

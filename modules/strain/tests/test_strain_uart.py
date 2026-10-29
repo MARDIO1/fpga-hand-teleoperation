@@ -11,7 +11,8 @@ import unittest
 MODULE = Path(__file__).resolve().parents[1] / "software" / "ps"
 sys.path.insert(0, str(MODULE))
 
-from strain_uart import Calibration, Decoder, FRAME, PreviewCalibration, crc16_ccitt
+from strain_uart import Calibration, Decoder, FingerCalibration, FRAME, PreviewCalibration, crc16_ccitt
+from calibrate_strain import identify_slot
 
 
 def packet(sequence=7, status=0x0b, quaternion=(1.0, 0.1, 0.2, 0.3),
@@ -46,6 +47,22 @@ class DecoderTest(unittest.TestCase):
 
 
 class CalibrationTest(unittest.TestCase):
+    def test_individual_assignment_and_invalid_sample_hold(self):
+        calibration = FingerCalibration({
+            "thumb": {"slot": 4, "points": [1000, 2000, 3000]},
+            "index": {"slot": 1, "points": [3000, 2000, 1000]},
+            "middle": {"slot": 0, "points": [1000, 2000, 3000]},
+            "little": {"slot": 3, "points": [1000, 2000, 3000]},
+        })
+        self.assertEqual(calibration.map((3000, 2000, 0, 2000, 1000)),
+                         (0, 2048, 4095, 2048, 2048))
+        self.assertEqual(calibration.map((65535, 2000, 0, 65535, 1000)),
+                         (0, 2048, 4095, 2048, 2048))
+
+    def test_assignment_requires_distinct_clear_change(self):
+        self.assertEqual(identify_slot([1000]*5, [1010, 1400, 1010, 1020, 1010], set()), 1)
+        self.assertIsNone(identify_slot([1000]*5, [1000, 1400, 1350, 1000, 1000], set()))
+        self.assertIsNone(identify_slot([1000]*5, [1000, 1400, 1000, 1000, 1000], {1}))
     def test_decreasing_three_pose_mapping(self):
         poses = {"open": [0, 0, 3000, 0, 0],
                  "half": [0, 0, 2200, 0, 0],

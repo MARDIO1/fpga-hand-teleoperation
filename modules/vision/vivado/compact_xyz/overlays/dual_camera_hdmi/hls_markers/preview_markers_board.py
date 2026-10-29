@@ -1,6 +1,7 @@
 """Display candidate tables produced by the board's HLS core; no PC detection."""
 import argparse
 import json
+import math
 from pathlib import Path
 import sys
 import time
@@ -53,7 +54,15 @@ def main():
                     for match in result.get('matches',[]):
                         if match.get('xyz_valid'):
                             x,y,z=match['xyz_mm']
-                            lines.append('P%02d X %+.1f Y %+.1f Z %.1f  REPROJ %.3f PX'%(match['id'],x,y,z,match.get('reprojection_error_px',0)))
+                            distance=math.sqrt(x*x+y*y+z*z)
+                            lines.append('P%02d X %+.1f Y %+.1f Z %.1f RANGE %.1f MM  REPROJ %.3f PX'%(match['id'],x,y,z,distance,match.get('reprojection_error_px',0)))
+                    valid=[m for m in result.get('matches',[]) if m.get('xyz_valid')]
+                    if not valid:
+                        lines.append('NO VALID STEREO MATCH: 3D DISTANCE UNAVAILABLE')
+                    for i,a in enumerate(valid):
+                        for b in valid[i+1:]:
+                            d=math.dist(a['xyz_mm'],b['xyz_mm'])
+                            lines.append('P%02d - P%02d: %.1f MM'%(a['id'],b['id'],d))
                     footer=np.zeros((24*len(lines)+8,1280,3),np.uint8)
                     for i,line in enumerate(lines):cv2.putText(footer,line,(10,22+24*i),cv2.FONT_HERSHEY_SIMPLEX,.55,(255,255,255),1)
                     preview=np.vstack((preview,footer))

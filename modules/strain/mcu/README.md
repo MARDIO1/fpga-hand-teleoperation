@@ -13,7 +13,11 @@ Keil-only ADC bring-up remains in this directory for reference.
 | PB6 | MPU6050 SCL |
 | PB7 | MPU6050 SDA |
 | PB5 | MPU6050 INT |
-| PA2 | ADC1_IN2, 0 to 3.3 V |
+| PA2 | ADC1_IN2, slot 0, legacy middle-finger channel |
+| PA0 | ADC1_IN0, slot 1 |
+| PA3 | ADC1_IN3, slot 2 |
+| PA4 | ADC1_IN4, slot 3 |
+| PA5 | ADC1_IN5, slot 4 |
 | PA9 | USART1 TX to USB-TTL/Zynq RX |
 | PA10 | USART1 RX from USB-TTL/Zynq TX |
 | GND | Common ground |
@@ -33,10 +37,11 @@ in [`contracts/strain_uart.md`](../../../contracts/strain_uart.md). Each frame
 contains status, sequence and timestamp, quaternion `[w,x,y,z]`, five raw ADC
 slots, raw MPU temperature, and CRC-16/CCITT-FALSE.
 
-The current one-sensor build puts PA2 in ADC slot 0 and writes `0xffff` to the
-other four slots. Send ASCII `C` or `c` to start manual gyro calibration; keep
-the board stationary until the calibrating flag clears and calibrated flag is
-set.
+The CubeMX ADC1 configuration performs a five-rank scan. Slot 0 remains PA2 for
+compatibility with the original middle-finger channel; the other slots follow
+the pin order above. Send ASCII `C` or `c` to start manual gyro calibration;
+keep the board stationary until the calibrating flag clears and calibrated flag
+is set.
 
 ## Layout
 
@@ -45,5 +50,5 @@ set.
 - `tests/` - host-side checks for the filter and protocol
 - `Drivers/`, `Users/`, `Projects/` - retained older Keil ADC bring-up
 
-PA1 was measured as externally pulled to ground on the current test board, so
-the current firmware samples PA2 instead.
+PA1 was measured as externally pulled to ground on the current test board and is
+not used for ADC.

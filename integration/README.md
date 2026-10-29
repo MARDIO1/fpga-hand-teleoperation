@@ -1,5 +1,55 @@
 # Board integration
 
+## Current first-demo data path
+
+The stereo matching vertical gate is currently an experimental 5 pixels (the
+published v0.2.0 value was 2.5). The lab lighting thresholds are saved in
+`modules/vision/data/thresholds_lab_experimental.json`. Static tests improved
+yellow matching, but misses and false candidates remain; these settings need
+further validation for motion, occlusion, and 3D accuracy.
+
+### F103 USB CDC and individual finger calibration
+
+The F103 USB CDC device is expected at `/dev/ttyACM0`; verify its actual name
+after connecting it. It uses the same 46-byte IMUQ frames as UART. Stop any
+other serial reader before calibration. Individually calibrate thumb, index,
+middle and little finger, keeping the other fingers extended:
+
+```bash
+python3 modules/strain/software/ps/calibrate_strain.py --device /dev/ttyACM0
+python3 integration/software/ps/board_stream.py --device /dev/ttyACM0 --strain-mode calibrated
+```
+
+The program shows all ADC slots and proposes the slot with the clearest change;
+retry or choose a slot manually if necessary. It saves `finger_calibration.json`
+on the board. The stream maps the calibrated slots into HAND v2 order (thumb,
+index, middle, ring, little); ring copies normalized little-finger bend. Invalid
+ADC conversion values hold the last bend. The default destination remains
+`192.168.137.1:47000`; use `--host` and `--port` to change it. On the PC run
+the existing MANO receiver. These changes do not require a PL rebuild. The
+remaining sections include historical first-board information.
+
+The first demo uses the standalone optimized stereo release in PL and its PS
+software; the F103 provides the IMU quaternion and strain through USB UART.
+No board-side MPU6050 IP or `hand_core` call is required for this path. The
+older combined-overlay sections below describe earlier experiments, not the
+selected first-demo deployment. A simultaneous board run is not yet verified.
+
+The stereo publisher's `latest.json` contains frame-local matches in the
+physical left camera optical frame, with XYZ in millimetres. `vision_latest.py`
+converts XYZ to metres. The present wrist tracker requires a real calibration
+file relating the wrist marker layout, IMU and camera coordinates; no such
+file has been verified. Wrist and thumb yellow markers have the same colour.
+F103 and camera timestamps are separate clocks; the demo uses the newest
+samples without claiming exposure-level synchronization.
+
+`board_stream.py` sends the existing HAND v2 datagram. Its acceleration and
+angular-velocity fields are zero placeholders: IMUQ v1 does not contain those
+measurements. A missing or stale camera position retains the last position and
+clears its validity flag. The current protocol descriptions are
+`contracts/strain_uart.md` and `contracts/hand_sensor_frame.md`; no wire format
+changes are needed.
+
 This area owns the combined ACZ7015 designs. `create_project.tcl` retains the
 validated first-board IMU + hand-core image. `create_full_project.tcl` adds the
 optimized stereo capture/marker/XYZ pipeline to the same top-level image; it does
@@ -46,7 +96,7 @@ PL. The three sensor classes are calibrated separately.
 1. Strain: record the repeatable open / half-bent / closed poses:
 
 ```bash
-python3 modules/strain/software/ps/calibrate_strain.py --channels 2
+python3 modules/strain/software/ps/calibrate_strain.py --channels 0
 ```
 
 2. IMU: calibration runs on the F103 only when explicitly requested. Keep the
@@ -83,6 +133,9 @@ The PS reads the 46-byte `IMUQ` stream from `/dev/ttyUSB0`, checks its CRC and
 status, maps the calibrated bend channels, and forwards the F103 quaternion in
 `HAND v2` to `192.168.137.1:47000` at 100 Hz. It does not run a second attitude
 filter. Streaming starts after the MCU reports present, valid, and calibrated.
+The current firmware transmits five ADC slots in the order PA2, PA0, PA3, PA4,
+PA5. Slot 0 remains the legacy middle-finger channel; the other slots are raw
+inputs until the fitted glove is assigned to finger indices and calibrated.
 
 For the full image, run the optimized stereo publisher first. It atomically writes
 `/dev/shm/marker_results_v2/latest.json`. The hand streamer consumes its newest

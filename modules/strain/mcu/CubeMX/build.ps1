@@ -17,6 +17,10 @@ $includeDirectories = @(
     (Join-Path $projectRoot 'Drivers\STM32F1xx_HAL_Driver\Inc\Legacy'),
     (Join-Path $projectRoot 'Drivers\CMSIS\Device\ST\STM32F1xx\Include'),
     (Join-Path $projectRoot 'Drivers\CMSIS\Include'),
+    (Join-Path $projectRoot 'USB_DEVICE\App'),
+    (Join-Path $projectRoot 'USB_DEVICE\Target'),
+    (Join-Path $projectRoot 'Middlewares\ST\STM32_USB_Device_Library\Core\Inc'),
+    (Join-Path $projectRoot 'Middlewares\ST\STM32_USB_Device_Library\Class\CDC\Inc'),
     (Join-Path $projectRoot '..\Drivers\BSP\imu_filter')
 )
 
@@ -27,6 +31,14 @@ $sources = @(
     (Join-Path $projectRoot 'Core\Src\system_stm32f1xx.c'),
     (Join-Path $projectRoot 'App\Src\app.c'),
     (Join-Path $projectRoot 'App\Src\mpu6050.c'),
+    (Join-Path $projectRoot 'USB_DEVICE\App\usb_device.c'),
+    (Join-Path $projectRoot 'USB_DEVICE\App\usbd_cdc_if.c'),
+    (Join-Path $projectRoot 'USB_DEVICE\App\usbd_desc.c'),
+    (Join-Path $projectRoot 'USB_DEVICE\Target\usbd_conf.c'),
+    (Join-Path $projectRoot 'Middlewares\ST\STM32_USB_Device_Library\Core\Src\usbd_core.c'),
+    (Join-Path $projectRoot 'Middlewares\ST\STM32_USB_Device_Library\Core\Src\usbd_ctlreq.c'),
+    (Join-Path $projectRoot 'Middlewares\ST\STM32_USB_Device_Library\Core\Src\usbd_ioreq.c'),
+    (Join-Path $projectRoot 'Middlewares\ST\STM32_USB_Device_Library\Class\CDC\Src\usbd_cdc.c'),
     (Join-Path $projectRoot '..\Drivers\BSP\imu_filter\imu_filter.c'),
     (Join-Path $projectRoot 'STM32CubeIDE\Application\User\Core\syscalls.c'),
     (Join-Path $projectRoot 'STM32CubeIDE\Application\User\Core\sysmem.c'),
@@ -42,9 +54,12 @@ $sources = @(
     (Join-Path $projectRoot 'Drivers\STM32F1xx_HAL_Driver\Src\stm32f1xx_hal_gpio_ex.c'),
     (Join-Path $projectRoot 'Drivers\STM32F1xx_HAL_Driver\Src\stm32f1xx_hal_i2c.c'),
     (Join-Path $projectRoot 'Drivers\STM32F1xx_HAL_Driver\Src\stm32f1xx_hal_pwr.c'),
+    (Join-Path $projectRoot 'Drivers\STM32F1xx_HAL_Driver\Src\stm32f1xx_hal_pcd.c'),
+    (Join-Path $projectRoot 'Drivers\STM32F1xx_HAL_Driver\Src\stm32f1xx_hal_pcd_ex.c'),
     (Join-Path $projectRoot 'Drivers\STM32F1xx_HAL_Driver\Src\stm32f1xx_hal_rcc.c'),
     (Join-Path $projectRoot 'Drivers\STM32F1xx_HAL_Driver\Src\stm32f1xx_hal_rcc_ex.c'),
     (Join-Path $projectRoot 'Drivers\STM32F1xx_HAL_Driver\Src\stm32f1xx_hal_uart.c'),
+    (Join-Path $projectRoot 'Drivers\STM32F1xx_HAL_Driver\Src\stm32f1xx_ll_usb.c'),
     (Join-Path $projectRoot 'STM32CubeIDE\Application\User\Startup\startup_stm32f103c8tx.s')
 )
 

@@ -105,6 +105,10 @@ class StrainSerial:
             os.close(self.fd)
             self.fd = None
 
+    def discard_pending(self):
+        termios.tcflush(self.fd, termios.TCIFLUSH)
+        self.decoder.buffer.clear()
+
     def poll(self, timeout=0.0):
         ready, _, _ = select.select([self.fd], [], [], timeout)
         if not ready:
@@ -148,6 +152,8 @@ class Calibration:
     @classmethod
     def load(cls, path):
         data = json.loads(Path(path).read_text(encoding="utf-8"))
+        if data.get("schema") == "strain.fingers.v1":
+            return FingerCalibration(data["fingers"])
         if data.get("schema") != "strain.calibration.v1":
             raise ValueError("Unsupported strain calibration")
         return cls(data["channels"], data["poses"])
@@ -168,6 +174,45 @@ class Calibration:
                 bend = left[1] + (value - left[0]) * (right[1] - left[1]) / (right[0] - left[0])
             output[channel] = int(round(max(0.0, min(1.0, bend)) * 4095.0))
         return tuple(output)
+
+
+class FingerCalibration:
+    """Map independently calibrated ADC slots into HAND finger order."""
+
+    def __init__(self, fingers):
+        self.names = ("thumb", "index", "middle", "little")
+        self.fingers = fingers
+        slots = []
+        for name in self.names:
+            entry = fingers[name]
+            slot = entry["slot"]
+            points = entry["points"]
+            if slot not in range(5) or len(points) != 3 or not all(0 <= p <= 4095 for p in points):
+                raise ValueError("Invalid calibration for " + name)
+            if not (points[0] < points[1] < points[2] or points[0] > points[1] > points[2]):
+                raise ValueError("Non-monotonic calibration for " + name)
+            slots.append(slot)
+        if len(set(slots)) != len(slots):
+            raise ValueError("Finger ADC slots must be distinct")
+        self.last = [0] * 4
+
+    def map(self, raw):
+        for index, name in enumerate(self.names):
+            entry = self.fingers[name]
+            value = raw[entry["slot"]]
+            if not 0 <= value <= 4095:
+                continue
+            points = sorted(zip(entry["points"], (0.0, 0.5, 1.0)))
+            if value <= points[0][0]:
+                bend = points[0][1]
+            elif value >= points[2][0]:
+                bend = points[2][1]
+            else:
+                left, right = (points[0], points[1]) if value <= points[1][0] else (points[1], points[2])
+                bend = left[1] + (value - left[0]) * (right[1] - left[1]) / (right[0] - left[0])
+            self.last[index] = int(round(bend * 4095))
+        thumb, index, middle, little = self.last
+        return (thumb, index, middle, little, little)
 
 
 class PreviewCalibration:

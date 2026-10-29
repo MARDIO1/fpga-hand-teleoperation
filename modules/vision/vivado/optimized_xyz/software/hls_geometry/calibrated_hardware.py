@@ -29,7 +29,7 @@ class CalibratedHardwareMatcher(SparseMatcher):
         super().__init__();self.geometry_ip=GeometryIP()
         self.lib.marker_match_rectified.argtypes=self.lib.marker_match.argtypes
         self.lib.marker_match_rectified.restype=C.c_int
-        self.config.right_y_shift_px=0.;self.config.max_vertical_error_px=2.5
+        self.config.right_y_shift_px=0.;self.config.max_vertical_error_px=5.0
         self.calibration=json.loads(Path(__file__).with_name('calibration.json').read_text())
     def process(self,candidates):
         selected={e:select_candidates(candidates[e],self.geometry) for e in ('L','R')}

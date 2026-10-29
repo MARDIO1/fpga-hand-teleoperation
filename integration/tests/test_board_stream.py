@@ -2,6 +2,7 @@
 
 from pathlib import Path
 import struct
+import socket
 import sys
 import unittest
 
@@ -10,14 +11,49 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "integration" / "software" / "ps"))
 sys.path.insert(0, str(ROOT / "simulation" / "virtual_hand"))
 
-from board_stream import HAND, packet, pose_from_frame, smooth_bend
+from board_stream import HAND, finger_bend, middle_finger_bend, packet, pose_from_frame, smooth_bend
+from strain_uart import Calibration, FingerCalibration, PreviewCalibration
 from vision_latest import LatestVision, VisionMarker
 from wrist_ring import RingCalibration, RingMarker, WristRingTracker
-from live_hand_udp import decode_packet
+from live_hand_udp import UdpSensorReceiver, decode_packet
 from smoke_board import HAND_INPUT, HAND_OUTPUT, run_hand_core
 
 
 class BoardStreamTest(unittest.TestCase):
+    def test_five_finger_mapping_survives_udp_packet(self):
+        fingers = {name: {"slot": slot, "points": [1000, 2000, 3000]}
+                   for name, slot in (("thumb", 4), ("index", 1),
+                                      ("middle", 0), ("little", 3))}
+        bend = finger_bend(FingerCalibration(fingers), (3000, 2000, 0, 2500, 1000))
+        decoded = decode_packet(packet(1, 2, (1, 0, 0, 0), bend, (0, 0, 0)))
+        self.assertEqual(tuple(decoded.sensor.flex_raw), (0, 2048, 4095, 3071, 3071))
+
+    def test_five_finger_udp_loopback(self):
+        receiver = UdpSensorReceiver("127.0.0.1", 0)
+        sender = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            destination = receiver.socket.getsockname()
+            sender.sendto(packet(0, 1, (1, 0, 0, 0), (100, 200, 300, 400, 400),
+                                 (0, 0, 0), reset=True), destination)
+            receiver.socket.settimeout(1.0)
+            payload, _ = receiver.socket.recvfrom(2048, socket.MSG_PEEK)
+            self.assertEqual(tuple(decode_packet(payload).sensor.flex_raw), (100, 200, 300, 400, 400))
+            receiver.socket.setblocking(False)
+            self.assertEqual(tuple(receiver.poll().sensor.flex_raw), (100, 200, 300, 400, 400))
+        finally:
+            sender.close()
+            receiver.close()
+
+    def test_adc_slot_zero_maps_only_to_middle_finger(self):
+        raw = (1600, 65535, 65535, 65535, 65535)
+        preview = PreviewCalibration(channel=0, span=600)
+        self.assertEqual(middle_finger_bend(preview, raw), (0, 0, 0, 0, 0))
+        self.assertEqual(middle_finger_bend(preview, (2200,) + raw[1:]),
+                         (0, 0, 4095, 0, 0))
+        calibration = Calibration([0], {
+            "open": [1000], "half": [1500], "fist": [2000]})
+        self.assertEqual(middle_finger_bend(calibration, raw), (0, 0, 2457, 0, 0))
+
     def test_pose_uses_calibrated_imuq_quaternion(self):
         class Frame:
             mpu_present = True

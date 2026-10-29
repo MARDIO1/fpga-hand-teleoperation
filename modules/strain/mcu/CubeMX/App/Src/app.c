@@ -3,6 +3,7 @@
 #include "imu_filter.h"
 #include "main.h"
 #include "mpu6050.h"
+#include "usbd_cdc_if.h"
 
 #include <string.h>
 
@@ -12,6 +13,7 @@
 #define APP_PACKET_SIZE            46U
 #define APP_MPU_RETRY_PERIOD_MS    500U
 #define APP_MPU_MAX_INIT_ATTEMPTS  5U
+#define APP_ADC_CHANNELS           5U
 
 #define STATUS_MPU_PRESENT         (1U << 0)
 #define STATUS_SAMPLE_VALID        (1U << 1)
@@ -19,6 +21,7 @@
 #define STATUS_CALIBRATED          (1U << 3)
 #define STATUS_TX_DROPPED          (1U << 4)
 #define STATUS_MPU_INIT_ERROR      (1U << 5)
+#define STATUS_USB_DROPPED         (1U << 6)
 
 static ADC_HandleTypeDef *app_adc;
 static UART_HandleTypeDef *app_uart;
@@ -35,8 +38,15 @@ static uint32_t app_last_imu_ms;
 static uint32_t app_last_telemetry_ms;
 static uint32_t app_last_mpu_retry_ms;
 static uint8_t app_mpu_init_attempts;
-static uint16_t app_adc_raw;
+static uint16_t app_adc_raw[APP_ADC_CHANNELS] = {
+    0xFFFFU, 0xFFFFU, 0xFFFFU, 0xFFFFU, 0xFFFFU
+};
+static const uint32_t app_adc_channels[APP_ADC_CHANNELS] = {
+    ADC_CHANNEL_2, ADC_CHANNEL_0, ADC_CHANNEL_3, ADC_CHANNEL_4,
+    ADC_CHANNEL_5
+};
 static uint8_t app_tx_buffer[APP_PACKET_SIZE];
+static uint8_t app_usb_tx_buffer[APP_PACKET_SIZE];
 
 static uint32_t app_calibration_count;
 static float app_calibration_sum[3];
@@ -110,6 +120,14 @@ static void start_calibration(void)
     app_status &= (uint8_t)~STATUS_CALIBRATED;
 }
 
+static void handle_command(uint8_t command)
+{
+    if ((command == 'C') || (command == 'c'))
+    {
+        start_calibration();
+    }
+}
+
 static void update_calibration(void)
 {
     float bias[3];
@@ -143,11 +161,27 @@ static void update_calibration(void)
 
 static void sample_adc(void)
 {
-    if (HAL_ADC_Start(app_adc) == HAL_OK)
+    uint32_t channel;
+    ADC_ChannelConfTypeDef config = {0};
+
+    config.Rank = ADC_REGULAR_RANK_1;
+    config.SamplingTime = ADC_SAMPLETIME_239CYCLES_5;
+
+    for (channel = 0U; channel < APP_ADC_CHANNELS; ++channel)
     {
+        app_adc_raw[channel] = 0xFFFFU;
+        config.Channel = app_adc_channels[channel];
+        if (HAL_ADC_ConfigChannel(app_adc, &config) != HAL_OK)
+        {
+            continue;
+        }
+        if (HAL_ADC_Start(app_adc) != HAL_OK)
+        {
+            continue;
+        }
         if (HAL_ADC_PollForConversion(app_adc, 2U) == HAL_OK)
         {
-            app_adc_raw = (uint16_t)HAL_ADC_GetValue(app_adc);
+            app_adc_raw[channel] = (uint16_t)HAL_ADC_GetValue(app_adc);
         }
         (void)HAL_ADC_Stop(app_adc);
     }
@@ -179,11 +213,13 @@ static void send_telemetry(uint32_t now_ms)
         put_float_le(&app_tx_buffer[16U + axis * 4U], app_filter.q[axis]);
     }
 
-    /* Five reserved ADC slots. PA2/ADC1_IN2 currently occupies slot zero. */
-    put_u16_le(&app_tx_buffer[32], app_adc_raw);
-    for (axis = 1U; axis < 5U; ++axis)
+    /*
+     * ADC slot order: PA2/IN2, PA0/IN0, PA3/IN3, PA4/IN4, PA5/IN5.
+     * Slot zero remains the original middle-finger channel.
+     */
+    for (axis = 0U; axis < APP_ADC_CHANNELS; ++axis)
     {
-        put_u16_le(&app_tx_buffer[32U + axis * 2U], 0xFFFFU);
+        put_u16_le(&app_tx_buffer[32U + axis * 2U], app_adc_raw[axis]);
     }
     put_u16_le(&app_tx_buffer[42], (uint16_t)app_sample.temperature_raw);
     crc = crc16_ccitt(app_tx_buffer, APP_PACKET_SIZE - 2U);
@@ -196,6 +232,23 @@ static void send_telemetry(uint32_t now_ms)
         app_uart_tx_busy = 0U;
         app_status |= STATUS_TX_DROPPED;
     }
+
+    if (CDC_TransmitReady_FS() != 0U)
+    {
+        memcpy(app_usb_tx_buffer, app_tx_buffer, APP_PACKET_SIZE);
+        if (CDC_Transmit_FS(app_usb_tx_buffer, APP_PACKET_SIZE) == USBD_OK)
+        {
+            app_status &= (uint8_t)~STATUS_USB_DROPPED;
+        }
+        else
+        {
+            app_status |= STATUS_USB_DROPPED;
+        }
+    }
+    else
+    {
+        app_status |= STATUS_USB_DROPPED;
+    }
 }
 
 void app_init(ADC_HandleTypeDef *adc, I2C_HandleTypeDef *i2c,
@@ -207,8 +260,17 @@ void app_init(ADC_HandleTypeDef *adc, I2C_HandleTypeDef *i2c,
     app_uart = uart;
     app_mpu.i2c = i2c;
     imu_ekf_init(&app_filter, zero_bias);
+    app_last_imu_ms = HAL_GetTick();
+    app_last_telemetry_ms = app_last_imu_ms;
 
+    /* F1 has one ADC data register.  Use explicit single-channel conversions
+       so packet slots cannot rotate or collapse without DMA. */
+    app_adc->Init.ScanConvMode = ADC_SCAN_DISABLE;
+    app_adc->Init.ContinuousConvMode = DISABLE;
+    app_adc->Init.NbrOfConversion = 1U;
+    (void)HAL_ADC_Init(app_adc);
     (void)HAL_ADCEx_Calibration_Start(app_adc);
+    sample_adc();
     try_init_mpu();
 
     HAL_NVIC_SetPriority(EXTI9_5_IRQn, 1U, 0U);
@@ -254,9 +316,24 @@ void app_process(void)
     if ((uint32_t)(now_ms - app_last_telemetry_ms) >=
         APP_TELEMETRY_PERIOD_MS)
     {
-        app_last_telemetry_ms = now_ms;
+        app_last_telemetry_ms += APP_TELEMETRY_PERIOD_MS;
+        if ((uint32_t)(now_ms - app_last_telemetry_ms) >=
+            APP_TELEMETRY_PERIOD_MS)
+        {
+            app_last_telemetry_ms = now_ms;
+        }
         sample_adc();
         send_telemetry(now_ms);
+    }
+}
+
+void app_usb_receive(const uint8_t *data, uint32_t length)
+{
+    uint32_t index;
+
+    for (index = 0U; index < length; ++index)
+    {
+        handle_command(data[index]);
     }
 }
 
@@ -280,10 +357,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *uart)
 {
     if (uart == app_uart)
     {
-        if ((app_uart_rx_byte == 'C') || (app_uart_rx_byte == 'c'))
-        {
-            start_calibration();
-        }
+        handle_command(app_uart_rx_byte);
         (void)HAL_UART_Receive_IT(app_uart, &app_uart_rx_byte, 1U);
     }
 }

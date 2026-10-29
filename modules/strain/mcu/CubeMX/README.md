@@ -12,7 +12,11 @@ This is the CubeMX/HAL firmware used for the first hardware bring-up.
 | MPU6050 SDA | PB7 / I2C1_SDA |  |
 | MPU6050 INT | PB5 / EXTI5 | Rising-edge data-ready interrupt |
 | MPU6050 AD0 | GND | Selects address `0x68` |
-| Strain OUT | PA2 / ADC1_IN2 | Input must remain between 0 V and 3.3 V |
+| Strain slot 0 | PA2 / ADC1_IN2 | Legacy middle-finger input |
+| Strain slot 1 | PA0 / ADC1_IN0 | Input must remain between 0 V and 3.3 V |
+| Strain slot 2 | PA3 / ADC1_IN3 | Input must remain between 0 V and 3.3 V |
+| Strain slot 3 | PA4 / ADC1_IN4 | Input must remain between 0 V and 3.3 V |
+| Strain slot 4 | PA5 / ADC1_IN5 | Input must remain between 0 V and 3.3 V |
 | USB-TTL RX | PA9 / USART1_TX | Cross TX to RX |
 | USB-TTL TX | PA10 / USART1_RX | Cross RX to TX |
 | USB-TTL GND | GND | Required |
@@ -24,6 +28,7 @@ This is the CubeMX/HAL firmware used for the first hardware bring-up.
   the measured processing rate is about 216 Hz; integration uses the measured
   elapsed time instead of assuming 500 Hz.
 - Telemetry: 115200 8-N-1, 100 Hz, UART TX DMA.
+- ADC: CubeMX ADC1 five-rank scan at 12 MHz ADC clock, 239.5-cycle sampling.
 - Calibration: send ASCII `C` or `c` while the unit is stationary. The next
   2500 processed samples (currently about 12 seconds) estimate gyro bias.
   Power-up never starts a calibration automatically.
@@ -42,7 +47,7 @@ This is the CubeMX/HAL firmware used for the first hardware bring-up.
 | 8 | 4 | Sequence number |
 | 12 | 4 | Timestamp in microseconds (1 ms resolution) |
 | 16 | 16 | Quaternion `float32 [w, x, y, z]` |
-| 32 | 10 | Five ADC `uint16` slots; PA2 is slot 0, unused slots are `0xFFFF` |
+| 32 | 10 | Five ADC `uint16` slots: PA2, PA0, PA3, PA4, PA5 |
 | 42 | 2 | MPU6050 raw temperature `int16` |
 | 44 | 2 | CRC-16/CCITT-FALSE over bytes 0..43 |
 
